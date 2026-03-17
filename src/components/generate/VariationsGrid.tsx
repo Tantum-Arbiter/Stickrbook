@@ -283,7 +283,7 @@ export function VariationsGrid({
                 const batchName = firstVariation?.batchName || firstJob?.batchName;
                 const isCollapsed = collapsedBatches.has(key);
 
-                // Determine label
+                // Determine label - use job metadata if no variations yet
                 let label: string;
                 if (batchName) {
                   if (firstVariation?.pose || firstVariation?.viewAngle) {
@@ -293,8 +293,14 @@ export function VariationsGrid({
                   }
                 } else if (firstVariation?.pose || firstVariation?.viewAngle) {
                   label = `${firstVariation.poseLabel || firstVariation.pose || ''} ${firstVariation.viewAngleLabel || firstVariation.viewAngle || ''}`.trim();
+                } else if (firstJob) {
+                  // Use job type as label if no other metadata
+                  const jobTypeLabel = firstJob.jobType === 'character' ? 'Characters' :
+                                      firstJob.jobType === 'object' ? 'Objects' :
+                                      firstJob.jobType === 'scene' ? 'Scenes' : 'Generating';
+                  label = jobTypeLabel;
                 } else {
-                  label = 'Variations';
+                  label = 'Generating...';
                 }
 
                 return (

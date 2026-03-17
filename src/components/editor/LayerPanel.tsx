@@ -179,6 +179,22 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
         const asset = currentBook?.assets.find((a) => a.id === layer.assetId);
         if (!asset?.imagePath) continue;
 
+        // Load the asset image to get its actual dimensions
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = asset.imagePath;
+        });
+
+        // Calculate the correct scale factor
+        // The layer.width/height represent the displayed size on canvas
+        // The img.width/height represent the actual asset image size
+        // We need to scale the asset to match the layer's displayed size
+        const scaleX = layer.width / img.width;
+        const scaleY = layer.height / img.height;
+        const finalScale = Math.min(scaleX, scaleY); // Use uniform scaling
+
         // Convert layer image to base64
         const assetBase64 = await imageToBase64(asset.imagePath);
 
@@ -190,7 +206,7 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
             asset: assetBase64,
             background: backgroundBase64,
             position: { x: Math.round(layer.x), y: Math.round(layer.y) },
-            scale: layer.scale || 1.0,
+            scale: finalScale,
             harmonize: true,
             shadow: {
               x: 10,
