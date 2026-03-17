@@ -395,9 +395,12 @@ export const useGenerationStore = create<GenerationState>()(
         }
 
         const result = await response.json();
-        console.log('✅ Backend response:', result);
-        console.log('🔍 Backend asset fields:', Object.keys(result.asset));
+        console.log('✅ Backend response:', JSON.stringify(result, null, 2));
         const backendAsset = result.asset;
+        console.log('🔍 Backend asset fields:', Object.keys(backendAsset));
+        console.log('🔍 imagePath field:', backendAsset.imagePath);
+        console.log('🔍 image_path field:', backendAsset.image_path);
+        console.log('🔍 thumbnailPath field:', backendAsset.thumbnailPath);
 
         // Backend sends imagePath (camelCase) with proper URL, not image_path (snake_case)
         const asset: Asset = {
@@ -412,7 +415,7 @@ export const useGenerationStore = create<GenerationState>()(
           createdAt: new Date().toISOString(),
         };
 
-        console.log('💾 Converted asset:', asset);
+        console.log('💾 Converted asset:', JSON.stringify(asset, null, 2));
 
         // Add to projects store
         await useProjectsStore.getState().addAsset(currentBook.id, asset);
@@ -449,8 +452,12 @@ export const useGenerationStore = create<GenerationState>()(
       }
 
       const result = await response.json();
-      console.log('✅ [Regular save] Backend response:', result);
+      console.log('✅ [Regular save] Backend response:', JSON.stringify(result, null, 2));
       const backendAsset = result.asset;
+      console.log('🔍 [Regular save] Backend asset fields:', Object.keys(backendAsset));
+      console.log('🔍 [Regular save] imagePath field:', backendAsset.imagePath);
+      console.log('🔍 [Regular save] image_path field:', backendAsset.image_path);
+      console.log('🔍 [Regular save] thumbnailPath field:', backendAsset.thumbnailPath);
 
       // Backend sends imagePath (camelCase) with proper URL, not image_path (snake_case)
       const asset: Asset = {
@@ -465,7 +472,7 @@ export const useGenerationStore = create<GenerationState>()(
         createdAt: new Date().toISOString(),
       };
 
-      console.log('💾 [Regular save] Converted asset:', asset);
+      console.log('💾 [Regular save] Converted asset:', JSON.stringify(asset, null, 2));
 
       // Add to projects store
       await useProjectsStore.getState().addAsset(currentBook.id, asset);
