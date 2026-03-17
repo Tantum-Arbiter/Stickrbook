@@ -11,6 +11,7 @@
 import { useCallback, useState, useRef } from 'react';
 import { useEditorStore, useProjectsStore } from '../../store';
 import type { LayerOverlay } from '../../store/types';
+import { API_BASE_URL } from '../../config';
 import {
   Layers,
   PanelRightClose,
@@ -36,17 +37,26 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState(220);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isMerging, setIsMerging] = useState(false);
+  const [isFlattening, setIsFlattening] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const {
     layers,
     selectedLayerId,
     selectedLayerIds,
     baseImagePath,
+    canvasWidth,
+    canvasHeight,
     selectLayer,
     updateLayer,
     deleteLayer,
     reorderLayers,
+    addLayer,
+    setBaseImage,
   } = useEditorStore();
+
+  const currentBook = useProjectsStore((s) => s.currentBook());
+  const addAsset = useProjectsStore((s) => s.addAsset);
 
   // Sort layers by z-index descending (top layer first in list)
   const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex);
@@ -102,6 +112,186 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
   const handleDragLeave = useCallback(() => {
     setDragOverIndex(null);
   }, []);
+
+  // Helper: Convert image URL to base64
+  const imageToBase64 = useCallback(async (imagePath: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imagePath;
+    });
+  }, []);
+
+  // Helper: Render layer to canvas at specific position
+  const renderLayerToCanvas = useCallback((
+    ctx: CanvasRenderingContext2D,
+    layer: LayerOverlay,
+    imagePath: string
+  ): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.save();
+        ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
+        ctx.rotate((layer.rotation * Math.PI) / 180);
+        ctx.globalAlpha = layer.opacity;
+        ctx.drawImage(img, -layer.width / 2, -layer.height / 2, layer.width, layer.height);
+        ctx.restore();
+        resolve();
+      };
+      img.onerror = () => reject(new Error('Failed to load layer image'));
+      img.src = imagePath;
+    });
+  }, []);
+
+  // Magic Merge: Blend selected layers into background
+  const handleMagicMerge = useCallback(async () => {
+    if (!baseImagePath || selectedLayerIds.length === 0) {
+      alert('Please select at least one layer to merge');
+      return;
+    }
+
+    setIsMerging(true);
+    try {
+      // Get the selected layers
+      const selectedLayers = layers.filter((l) => selectedLayerIds.includes(l.id));
+
+      // Convert background to base64
+      const backgroundBase64 = await imageToBase64(baseImagePath);
+
+      // Process each selected layer with Magic Merge
+      for (const layer of selectedLayers) {
+        const asset = currentBook?.assets.find((a) => a.id === layer.assetId);
+        if (!asset?.imagePath) continue;
+
+        // Convert layer image to base64
+        const assetBase64 = await imageToBase64(asset.imagePath);
+
+        // Call Magic Merge API
+        const response = await fetch(`${API_BASE_URL}/magic-merge/magic-merge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            asset: assetBase64,
+            background: backgroundBase64,
+            position: { x: Math.round(layer.x), y: Math.round(layer.y) },
+            scale: layer.scale || 1.0,
+            harmonize: true,
+            shadow: {
+              x: 10,
+              y: 10,
+              blur: 20,
+              opacity: 0.5,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Magic Merge failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        // Update the base image with the merged result
+        setBaseImage(result.result);
+
+        // Remove the merged layer
+        deleteLayer(layer.id);
+      }
+
+      alert('Magic Merge complete! Layers blended into background.');
+    } catch (error) {
+      console.error('Magic Merge failed:', error);
+      alert(`Magic Merge failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsMerging(false);
+    }
+  }, [baseImagePath, selectedLayerIds, layers, currentBook, imageToBase64, setBaseImage, deleteLayer]);
+
+  // Flatten: Combine all layers into a single image
+  const handleFlatten = useCallback(async () => {
+    if (!baseImagePath || layers.length === 0) {
+      alert('Nothing to flatten');
+      return;
+    }
+
+    setIsFlattening(true);
+    try {
+      // Create a canvas with the editor dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Draw base image
+      const baseImg = new Image();
+      baseImg.crossOrigin = 'anonymous';
+      await new Promise<void>((resolve, reject) => {
+        baseImg.onload = () => {
+          ctx.drawImage(baseImg, 0, 0, canvasWidth, canvasHeight);
+          resolve();
+        };
+        baseImg.onerror = () => reject(new Error('Failed to load base image'));
+        baseImg.src = baseImagePath;
+      });
+
+      // Draw all visible layers in order (sorted by zIndex)
+      const visibleLayers = layers
+        .filter((l) => l.visible)
+        .sort((a, b) => a.zIndex - b.zIndex);
+
+      for (const layer of visibleLayers) {
+        const asset = currentBook?.assets.find((a) => a.id === layer.assetId);
+        if (!asset?.imagePath) continue;
+
+        await renderLayerToCanvas(ctx, layer, asset.imagePath);
+      }
+
+      // Convert canvas to base64
+      const flattenedImage = canvas.toDataURL('image/png');
+
+      // Save as new asset
+      if (currentBook && addAsset) {
+        const newAsset = await addAsset(currentBook.id, {
+          name: `Flattened_${Date.now()}`,
+          type: 'image',
+          imagePath: flattenedImage,
+        });
+
+        // Set as new base image
+        setBaseImage(flattenedImage);
+
+        // Clear all layers
+        layers.forEach((layer) => deleteLayer(layer.id));
+
+        alert('Layers flattened successfully!');
+      }
+    } catch (error) {
+      console.error('Flatten failed:', error);
+      alert(`Flatten failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsFlattening(false);
+    }
+  }, [baseImagePath, layers, canvasWidth, canvasHeight, currentBook, addAsset, setBaseImage, deleteLayer, renderLayerToCanvas]);
 
   const handleClearAll = useCallback(() => {
     sortedLayers.forEach((layer) => deleteLayer(layer.id));
@@ -214,11 +404,21 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
           {/* Layer Actions */}
           {sortedLayers.length > 0 && (
             <div className="layer-actions">
-              <button className="layer-action-btn" title="Magic Merge - Blend selected layer into background">
-                <Sparkles size={12} /> Merge
+              <button
+                className="layer-action-btn"
+                onClick={handleMagicMerge}
+                disabled={isMerging || selectedLayerIds.length === 0}
+                title={selectedLayerIds.length === 0 ? "Select layers to merge" : "Magic Merge - Blend selected layers into background with AI"}
+              >
+                <Sparkles size={12} /> {isMerging ? 'Merging...' : 'Merge'}
               </button>
-              <button className="layer-action-btn" title="Merge all layers">
-                <Combine size={12} /> Flatten
+              <button
+                className="layer-action-btn"
+                onClick={handleFlatten}
+                disabled={isFlattening}
+                title="Flatten all layers into a single image"
+              >
+                <Combine size={12} /> {isFlattening ? 'Flattening...' : 'Flatten'}
               </button>
               <button className="layer-action-btn" onClick={handleClearAll} title="Remove all">
                 <Trash2 size={12} /> Clear
