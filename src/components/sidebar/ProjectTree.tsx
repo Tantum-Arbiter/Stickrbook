@@ -27,10 +27,12 @@ export function ProjectTree({ className = '', onBookSelect }: ProjectTreeProps) 
 
   const handleBookClick = useCallback(
     (book: Book) => {
+      // Set both the project and the book to ensure proper context
+      setCurrentProject(book.projectId);
       setCurrentBook(book.id);
       onBookSelect?.(book);
     },
-    [setCurrentBook, onBookSelect]
+    [setCurrentProject, setCurrentBook, onBookSelect]
   );
 
   if (projects.length === 0) {
