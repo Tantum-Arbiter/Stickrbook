@@ -121,14 +121,17 @@ function ProjectItem({
       <div
         className={`project-header ${isActive ? 'active' : ''}`}
         onClick={onProjectClick}
+        title={project.name}
       >
         <span className="project-toggle" onClick={handleToggle}>
           <ChevronDown size={12} />
         </span>
-        <h4>
+        <h4 style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <Folder size={14} /> {project.name}
         </h4>
-        <span className="count">{books.length}</span>
+        <span className="count" title={`${books.length} book${books.length !== 1 ? 's' : ''}`}>
+          {books.length}
+        </span>
         <button className="project-menu-btn" title="Project options">
           <MoreHorizontal size={14} />
         </button>
@@ -155,7 +158,7 @@ function ProjectItem({
         <button
           className="book-item book-add-btn"
           onClick={handleNewBook}
-          title="Create new book"
+          title="Create new book in this project"
         >
           <Plus size={14} /> New Book
         </button>
@@ -173,14 +176,21 @@ interface BookItemProps {
 
 function BookItem({ book, isActive, onClick }: BookItemProps) {
   const pageCount = book.pages?.length || 0;
+  const pageText = `${pageCount} page${pageCount !== 1 ? 's' : ''}`;
 
   return (
     <div
       className={`book-item ${isActive ? 'active' : ''}`}
       onClick={onClick}
+      title={`${book.title} - ${pageText}`}
     >
-      <h5><BookOpen size={14} /> {book.title}</h5>
-      <p>{pageCount} page{pageCount !== 1 ? 's' : ''}</p>
+      <h5>
+        <BookOpen size={14} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {book.title}
+        </span>
+      </h5>
+      <p>{pageText}</p>
       <button className="book-item-menu" title="Book options">
         <MoreHorizontal size={12} />
       </button>

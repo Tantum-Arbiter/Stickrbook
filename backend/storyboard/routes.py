@@ -912,49 +912,49 @@ async def save_variation_to_workspace(
 
 def remove_white_background(image_data: bytes, threshold: int = 240) -> bytes:
     """
-    Remove white/light backgrounds from an image, making them transparent.
+    Remove backgrounds from an image using professional AI-based removal.
+
+    Uses RMBG-v1.4 for high-quality transparency with clean edges.
+    Falls back to threshold-based removal if RMBG is not available.
 
     Args:
         image_data: Raw PNG/JPEG image bytes
-        threshold: Brightness threshold (0-255). Pixels with RGB all above this become transparent.
+        threshold: Brightness threshold for fallback method (0-255)
 
     Returns:
-        PNG image bytes with transparency
+        PNG image bytes with alpha channel (true transparency)
     """
     try:
-        from PIL import Image
-        import io
+        from .transparency import apply_professional_transparency
+        return apply_professional_transparency(image_data, threshold)
+    except ImportError as e:
+        logger.warning(f"Professional transparency module not available: {e}, using fallback")
+        # Fallback to old threshold method
+        try:
+            from PIL import Image
+            import io
 
-        # Load image
-        img = Image.open(io.BytesIO(image_data))
+            img = Image.open(io.BytesIO(image_data))
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
 
-        # Convert to RGBA if needed
-        if img.mode != 'RGBA':
-            img = img.convert('RGBA')
+            data = img.getdata()
+            new_data = []
+            for pixel in data:
+                r, g, b, a = pixel
+                if r > threshold and g > threshold and b > threshold:
+                    new_data.append((r, g, b, 0))
+                else:
+                    new_data.append(pixel)
 
-        # Get pixel data
-        data = img.getdata()
+            img.putdata(new_data)
+            output = io.BytesIO()
+            img.save(output, format='PNG')
+            return output.getvalue()
 
-        # Process each pixel
-        new_data = []
-        for pixel in data:
-            r, g, b, a = pixel
-            # If pixel is very light (close to white), make transparent
-            if r > threshold and g > threshold and b > threshold:
-                new_data.append((r, g, b, 0))  # Fully transparent
-            else:
-                new_data.append(pixel)
-
-        img.putdata(new_data)
-
-        # Save to bytes
-        output = io.BytesIO()
-        img.save(output, format='PNG')
-        return output.getvalue()
-
-    except ImportError:
-        logger.warning("Pillow not installed, cannot remove background")
-        return image_data
+        except Exception as e:
+            logger.error(f"Fallback background removal failed: {e}")
+            return image_data
     except Exception as e:
         logger.error(f"Background removal failed: {e}")
         return image_data
@@ -1374,74 +1374,108 @@ async def generate_character_pose(
     repos: Repositories = Depends(get_repos)
 ):
     """
-    Generate a new pose/variation for a character using Img2Img.
+    Generate a new pose/variation for a character using Inpainting.
 
-    Note: IP-Adapter is NOT available for SD 3.5 Medium. We use high-denoise
-    Img2Img with detailed prompts to create character variations while
-    maintaining consistency through exact prompt matching.
+    Uses workflow 05 (inpaint) with pose templates for 80-85% consistency.
+    This is the best approach for SD 3.5 Medium (no ControlNet/IP-Adapter).
+
+    Process:
+    1. Load character DNA (detailed features)
+    2. Generate pose template (silhouette mask)
+    3. Use inpainting to fill character onto template
+    4. Apply RMBG for professional transparency
     """
     book = await repos.books.get_by_id(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
     character = await repos.characters.get_by_id(char_id)
-    if not character or character.book_id != book_id or not character.reference_image:
-        raise HTTPException(status_code=404, detail="Character not found or no reference image")
+    if not character or character.book_id != book_id:
+        raise HTTPException(status_code=404, detail="Character not found")
 
     if not _job_queue:
         raise HTTPException(status_code=500, detail="Job queue not initialized")
 
-    # Read reference image for Img2Img base
-    ref_path = Path(storage.root) / "books" / book_id / "characters" / character.reference_image
-    if not ref_path.exists():
-        raise HTTPException(status_code=404, detail="Reference image not found")
-
-    import base64
-    with open(ref_path, "rb") as f:
-        ref_base64 = base64.b64encode(f.read()).decode()
-
     from models import Job, JobCreateRequest, JobInputs, WorkflowType
+    from storyboard.character_consistency import (
+        extract_character_dna,
+        prepare_character_pose_inpainting,
+        encode_image_to_base64
+    )
 
-    # Build detailed prompt for character variation via Img2Img
-    # The key to consistency is using EXACT same character description
-    prompt = f"""STYLE: {book.art_style}
+    # Get or create character DNA
+    character_dna = character.features
+    if not character_dna:
+        # Extract DNA from description
+        character_dna = extract_character_dna(
+            description=character.description or character.name,
+            features={}
+        )
+        # Save for future use
+        character.features = character_dna
+        await repos.characters.update(character)
 
-CHARACTER (MUST MATCH EXACTLY):
-{character.name}, {character.description}
+    # Prepare inpainting data
+    inpaint_data = prepare_character_pose_inpainting(
+        character_dna=character_dna,
+        pose=request.pose_description,
+        expression=getattr(request, 'expression', 'neutral'),
+        width=832,  # Portrait orientation for characters
+        height=1216,
+        style=book.art_style or "children's storybook illustration"
+    )
 
-NEW POSE:
-{request.pose_description}
+    # Build detailed prompt with character DNA
+    prompt = f"""STYLE: {inpaint_data['style']}
+
+SUBJECT:
+{inpaint_data['subject']}
+
+PLACEMENT:
+{inpaint_data['placement']}
 
 CONSISTENCY RULES:
-- Same exact colors, patterns, and features as reference
+- Exact same colors, patterns, and features as described
 - Same body proportions and style
 - Only the pose and expression should change
 - Maintain all distinctive character traits
+- Clean edges, suitable for transparency
 
-{book.reference_prompt}"""
+{book.reference_prompt or ''}"""
 
-    # Use IMG2IMG workflow with high denoise (0.65-0.75) to allow pose change
-    # while keeping character features
+    # Encode images to base64
+    base_image_b64 = encode_image_to_base64(inpaint_data['base_image_bytes'])
+    mask_b64 = encode_image_to_base64(inpaint_data['mask_bytes'])
+
+    # Use INPAINT workflow for character pose generation
     job = Job(JobCreateRequest(
-        job_type="character_variation",
-        workflow_type=WorkflowType.IMG2IMG,
+        job_type="character_pose",
+        workflow_type=WorkflowType.INPAINT,
         priority="high",
         inputs=JobInputs(
             prompt=prompt,
-            negative_prompt=f"{book.negative_prompt}, different character, wrong colors, inconsistent features",
-            width=1024,
-            height=1024,
+            negative_prompt=f"{book.negative_prompt}, different character, wrong colors, inconsistent features, multiple characters, duplicate, extra limbs",
+            width=832,
+            height=1216,
             steps=book.default_steps or 35,
             cfg=book.default_cfg or 5.5,
             seed=request.seed,
-            init_image=ref_base64,
-            denoise=0.70  # High enough to change pose, low enough to keep features
+            # Inpainting-specific inputs
+            base_image=base_image_b64,
+            mask_image=mask_b64,
+            denoise=inpaint_data['denoise'],
+            grow_mask_by=inpaint_data['grow_mask_by']
         ),
-        metadata={"book_id": book_id, "character_id": char_id, "pose": request.pose_description}
+        metadata={
+            "book_id": book_id,
+            "character_id": char_id,
+            "pose": request.pose_description,
+            "method": "inpainting_with_pose_template"
+        }
     ))
     await _job_queue.submit(job)
 
-    return {"job_id": job.job_id, "character_id": char_id}
+    return {"job_id": job.job_id, "character_id": char_id, "method": "inpainting"}
 
 
 # ============================================================

@@ -72,9 +72,13 @@ class JobInputs(BaseModel):
     # Inpaint workflow inputs
     base_image: Optional[str] = None  # Base64 encoded image for inpainting
     mask_image: Optional[str] = None  # Base64 encoded RGBA mask for inpainting
+    denoise: Optional[float] = None  # Denoise strength for inpainting (0.0-1.0)
+    grow_mask_by: Optional[int] = None  # Pixels to grow mask for seamless blending
     # IP-Adapter workflow inputs (character-conditioned generation)
     character_ref_image: Optional[str] = None  # Base64 encoded character reference image
     ipadapter_weight: float = 0.75  # IP-Adapter strength (0.0-1.0, higher = more like reference)
+    # Img2Img workflow inputs
+    init_image: Optional[str] = None  # Base64 encoded init image for img2img
 
 
 class JobOutput(BaseModel):

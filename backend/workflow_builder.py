@@ -509,6 +509,10 @@ def build_inpaint_workflow(inputs: JobInputs, prompt_data: dict) -> dict:
     base_image = prompt_data.get("base_image", "page_background.png")
     mask_image = prompt_data.get("mask_image", "mask.png")
 
+    # Get denoise and grow_mask_by from inputs or prompt_data
+    denoise = inputs.denoise if inputs.denoise is not None else prompt_data.get("denoise", 0.85)
+    grow_mask_by = inputs.grow_mask_by if inputs.grow_mask_by is not None else prompt_data.get("grow_mask_by", 16)
+
     # Inpaint uses SAME style as existing scene
     full_prompt = INPAINT_POSITIVE.format(
         style=prompt_data.get("style", ""),  # REQUIRED - must match scene style
@@ -567,7 +571,7 @@ def build_inpaint_workflow(inputs: JobInputs, prompt_data: dict) -> dict:
                 "pixels": ["2", 0],
                 "vae": ["1", 2],
                 "mask": ["4", 0],
-                "grow_mask_by": prompt_data.get("grow_mask_by", 16)
+                "grow_mask_by": grow_mask_by
             },
             "class_type": "VAEEncodeForInpaint",
             "_meta": {"title": "VAE Encode For Inpaint"}
@@ -579,7 +583,7 @@ def build_inpaint_workflow(inputs: JobInputs, prompt_data: dict) -> dict:
                 "cfg": inputs.cfg or 5.5,
                 "sampler_name": "euler",
                 "scheduler": "sgm_uniform",
-                "denoise": prompt_data.get("denoise", 0.85),
+                "denoise": denoise,
                 "model": ["1", 0],
                 "positive": ["5", 0],
                 "negative": ["6", 0],

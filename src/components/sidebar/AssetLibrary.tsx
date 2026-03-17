@@ -1240,6 +1240,7 @@ interface AssetThumbnailProps {
 }
 
 function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: AssetThumbnailProps) {
+  const [showActions, setShowActions] = useState(false);
   const imgSrc = asset.thumbnailPath || asset.imagePath;
 
   useEffect(() => {
@@ -1255,35 +1256,82 @@ function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: Ass
   return (
     <div
       className="sidebar-asset-thumb"
-      onClick={onClick}
       draggable
       onDragStart={onDragStart}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
       style={{
         outline: isSelected ? '3px solid var(--accent-color)' : 'none',
         outlineOffset: '-3px',
         position: 'relative',
       }}
     >
+      {/* Edit Icon - Shows on hover */}
+      {showActions && !isSelected && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(e);
+          }}
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '4px',
+            background: 'rgba(0, 0, 0, 0.7)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 2,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.9)';
+            e.currentTarget.style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+          title="Select asset"
+        >
+          <Edit2 size={12} style={{ color: 'white' }} />
+        </button>
+      )}
+
+      {/* Selected Checkmark */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '4px',
-          right: '4px',
-          width: '20px',
-          height: '20px',
-          borderRadius: '50%',
-          background: 'var(--accent-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          color: 'white',
-          zIndex: 1,
-        }}>
+        <div
+          onClick={onClick}
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '4px',
+            background: 'var(--accent-color)',
+            border: '2px solid white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            color: 'white',
+            zIndex: 2,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          }}
+          title="Deselect asset"
+        >
           ✓
         </div>
       )}
+
       <img
         src={imgSrc}
         alt={asset.name}
@@ -1296,7 +1344,19 @@ function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: Ass
           console.log('✅ [AssetThumbnail] Image loaded successfully:', imgSrc);
         }}
       />
-      <span className="asset-name-label">{asset.name}</span>
+      <span
+        className="asset-name-label"
+        title={asset.name}
+        style={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          display: 'block',
+          width: '100%',
+        }}
+      >
+        {asset.name}
+      </span>
     </div>
   );
 }

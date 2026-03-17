@@ -60,6 +60,7 @@ class CompositeRequest(BaseModel):
     scale: float = 1.0
     shadow: Optional[Dict] = None
     seamBlending: bool = True
+    blendMode: str = 'mixed'  # 'mixed', 'monochrome', or 'normal'
 
 
 class CompositeResponse(BaseModel):
@@ -73,7 +74,9 @@ class MagicMergeRequest(BaseModel):
     position: Dict[str, int]
     scale: float = 1.0
     harmonize: bool = True
+    harmonizeStrength: float = 0.5  # Reduced default for more natural results
     shadow: Optional[Dict] = None
+    blendMode: str = 'mixed'  # 'mixed' (best detail), 'monochrome' (best color), 'normal' (balanced)
 
 
 class MagicMergeResponse(BaseModel):
@@ -142,10 +145,15 @@ async def harmonize(request: HarmonizeRequest):
 @router.post("/composite", response_model=CompositeResponse)
 async def composite(request: CompositeRequest):
     """
-    Composite asset onto background with Poisson blending
-    
+    Composite asset onto background with improved Poisson blending
+
     Cost: $0.00 (open source)
     Speed: <1 second
+
+    Blend Modes:
+    - 'mixed': Best for preserving detail (recommended)
+    - 'monochrome': Best for color matching
+    - 'normal': Balanced approach
     """
     try:
         result = composite_images(
@@ -155,7 +163,8 @@ async def composite(request: CompositeRequest):
             request.position,
             request.scale,
             request.shadow,
-            request.seamBlending
+            request.seamBlending,
+            request.blendMode
         )
         return CompositeResponse(**result)
     except Exception as e:
@@ -191,12 +200,12 @@ async def magic_merge(request: MagicMergeRequest):
                 request.asset,
                 request.background,
                 scene_analysis,
-                strength=0.7
+                strength=request.harmonizeStrength
             )
             harmonized_asset = harmonize_result['result']
             adjustments = harmonize_result['adjustments']
-        
-        # Step 4: Composite with Poisson blending
+
+        # Step 4: Composite with improved Poisson blending
         logger.info("Step 4: Compositing...")
         composite_result = composite_images(
             harmonized_asset,
@@ -205,7 +214,8 @@ async def magic_merge(request: MagicMergeRequest):
             request.position,
             request.scale,
             request.shadow,
-            seam_blending=True
+            seam_blending=True,
+            blend_mode=request.blendMode
         )
         
         logger.info("Magic Merge complete!")

@@ -112,6 +112,9 @@
   position: relative;
   margin-left: 16px;
   border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .book-item:hover {
@@ -126,17 +129,23 @@
 
 .book-item h5 {
   font-size: var(--font-size-sm);
-  margin: 0 0 2px 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 6px;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .book-item p {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ========== Book Item Menu ========== */
@@ -164,5 +173,51 @@
   color: var(--text);
   transform: translateY(-50%);
   box-shadow: none;
+}
+
+/* ========== Add Book Button ========== */
+.book-add-btn {
+  margin-left: 16px;
+  background: transparent !important;
+  border: 1px dashed var(--border) !important;
+  color: var(--text-muted) !important;
+  font-size: var(--font-size-sm) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px 10px !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.book-add-btn:hover {
+  background: var(--bg-panel) !important;
+  border-color: var(--brand-teal) !important;
+  color: var(--brand-teal) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ========== Empty States ========== */
+.project-empty,
+.book-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.project-empty p,
+.book-empty p {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
 }
 
