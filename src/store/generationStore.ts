@@ -307,15 +307,26 @@ export const useGenerationStore = create<GenerationState>()(
   },
 
   saveVariation: async (id: string, collectionName?: string) => {
+    console.log('💾 saveVariation called:', { id, collectionName });
     const variation = get().variations.find((v) => v.id === id);
-    if (!variation) throw new Error('Variation not found');
+    if (!variation) {
+      console.error('❌ Variation not found:', id);
+      throw new Error('Variation not found');
+    }
 
     // Save variation as an asset in the current book
     const currentBook = useProjectsStore.getState().currentBook();
-    if (!currentBook) throw new Error('No book selected');
+    if (!currentBook) {
+      console.error('❌ No book selected');
+      throw new Error('No book selected');
+    }
+
+    console.log('📚 Current book:', currentBook.id, currentBook.title);
 
     const mode = get().mode;
     const assetType = mode === 'scene' ? 'background' : mode === 'character' ? 'character' : 'prop';
+
+    console.log('🎨 Asset type:', assetType, 'from mode:', mode);
 
     // Prompt for collection name if not provided
     // Use batch name as default suggestion
@@ -329,6 +340,7 @@ export const useGenerationStore = create<GenerationState>()(
         : 'Enter collection name for this object (e.g., "Magic Items", "Weapons"):';
 
       collection = window.prompt(promptText, defaultCollection) || undefined;
+      console.log('📝 Collection name from prompt:', collection);
     }
 
     // For character/object types, the backend already removed the background during generation
@@ -342,16 +354,22 @@ export const useGenerationStore = create<GenerationState>()(
           params.append('collection', collection);
         }
 
-        const response = await fetch(
-          `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`,
-          { method: 'POST' }
-        );
+        console.log('🌐 Saving asset with params:', params.toString());
+        const url = `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`;
+        console.log('🌐 URL:', url);
+
+        const response = await fetch(url, { method: 'POST' });
+
+        console.log('📡 Response status:', response.status, response.statusText);
 
         if (!response.ok) {
-          throw new Error(`Failed to save asset: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('❌ Response error:', errorText);
+          throw new Error(`Failed to save asset: ${response.statusText} - ${errorText}`);
         }
 
         const result = await response.json();
+        console.log('✅ Backend response:', result);
         const backendAsset = result.asset;
 
         // Convert backend asset to frontend Asset type
@@ -361,18 +379,21 @@ export const useGenerationStore = create<GenerationState>()(
           name: backendAsset.name,
           assetType: backendAsset.asset_type || assetType,
           collection: backendAsset.collection,
-          imagePath: backendAsset.image_path,
-          thumbnailPath: backendAsset.image_path,
-          hasTransparency: true, // Backend already removed background during generation
+          imagePath: backendAsset.image_path || backendAsset.filename,
+          thumbnailPath: backendAsset.image_path || backendAsset.filename,
+          hasTransparency: backendAsset.has_transparency !== undefined ? backendAsset.has_transparency : true,
           tags: backendAsset.tags || ['transparent', 'auto-processed'],
           createdAt: new Date().toISOString(),
         };
 
+        console.log('💾 Converted asset:', asset);
+
         // Add to projects store
         await useProjectsStore.getState().addAsset(currentBook.id, asset);
+        console.log('✅ Asset added to projects store');
         return asset;
       } catch (error) {
-        console.error('Failed to save asset, falling back to regular save:', error);
+        console.error('❌ Failed to save asset, falling back to regular save:', error);
         // Fall through to regular save
       }
     }
@@ -385,17 +406,24 @@ export const useGenerationStore = create<GenerationState>()(
       params.append('collection', collection);
     }
 
+    console.log('🌐 [Regular save] Saving asset with params:', params.toString());
+
     try {
-      const response = await fetch(
-        `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`,
-        { method: 'POST' }
-      );
+      const url = `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`;
+      console.log('🌐 [Regular save] URL:', url);
+
+      const response = await fetch(url, { method: 'POST' });
+
+      console.log('📡 [Regular save] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
-        throw new Error(`Failed to save asset: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ [Regular save] Response error:', errorText);
+        throw new Error(`Failed to save asset: ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('✅ [Regular save] Backend response:', result);
       const backendAsset = result.asset;
 
       const asset: Asset = {
@@ -403,18 +431,21 @@ export const useGenerationStore = create<GenerationState>()(
         name: backendAsset.name,
         assetType: backendAsset.asset_type || assetType,
         collection: backendAsset.collection,
-        imagePath: backendAsset.image_path,
-        thumbnailPath: backendAsset.image_path,
-        hasTransparency: false,
+        imagePath: backendAsset.image_path || backendAsset.filename,
+        thumbnailPath: backendAsset.image_path || backendAsset.filename,
+        hasTransparency: backendAsset.has_transparency !== undefined ? backendAsset.has_transparency : false,
         tags: backendAsset.tags || [],
         createdAt: new Date().toISOString(),
       };
 
+      console.log('💾 [Regular save] Converted asset:', asset);
+
       // Add to projects store
       await useProjectsStore.getState().addAsset(currentBook.id, asset);
+      console.log('✅ [Regular save] Asset added to projects store');
       return asset;
     } catch (error) {
-      console.error('Failed to save asset:', error);
+      console.error('❌ [Regular save] Failed to save asset:', error);
       throw error;
     }
   },

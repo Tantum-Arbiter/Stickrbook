@@ -272,10 +272,14 @@ def _asset_to_dict(asset: db_models.Asset) -> dict:
     """Convert SQLAlchemy Asset model to API response dict."""
     return {
         "id": asset.id,
-        "type": asset.asset_type,
+        "asset_type": asset.asset_type,  # Frontend expects 'asset_type'
+        "type": asset.asset_type,  # Keep for backward compatibility
         "name": asset.name,
         "description": asset.description,
-        "filename": asset.image_path,
+        "collection": asset.collection,  # Include collection for grouping
+        "image_path": asset.image_path,  # Frontend expects 'image_path'
+        "filename": asset.image_path,  # Keep for backward compatibility
+        "has_transparency": asset.has_transparency if hasattr(asset, 'has_transparency') else False,
         "prompt": asset.prompt,
         "seed": asset.seed,
         "tags": asset.tags if asset.tags else [],

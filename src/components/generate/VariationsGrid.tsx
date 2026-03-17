@@ -50,14 +50,15 @@ export function VariationsGrid({
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [collapsedBatches, setCollapsedBatches] = useState<Set<string>>(new Set());
 
-  // Create slots based on actual content - only show slots for variations or active jobs
-  // Don't create empty slots based on variationCount alone
-  const totalSlots = Math.max(variations.length, activeJobs.length);
-  const slots = Array.from({ length: totalSlots }, (_, index) => {
-    const variation = variations[index];
-    const job = activeJobs[index];
-    return { index, variation, job };
-  });
+  // Create slots based on actual content - combine variations and active jobs
+  // Each slot should have either a variation OR a job, not based on index matching
+  const slots = [
+    // First, add all variations (completed jobs)
+    ...variations.map((variation, index) => ({ index, variation, job: undefined as GenerationJob | undefined })),
+    // Then, add all active jobs that don't have a corresponding variation yet
+    ...activeJobs.map((job, index) => ({ index: variations.length + index, variation: undefined as Variation | undefined, job })),
+  ];
+  const totalSlots = slots.length;
 
   // Determine grid columns based on number of items - more compact layout
   const getGridColumns = () => {
