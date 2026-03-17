@@ -154,21 +154,13 @@ def refine_mask_for_blending(mask: np.ndarray, feather: int = 2) -> np.ndarray:
     if len(mask.shape) == 3:
         mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
 
-    # Use adaptive threshold instead of fixed 128
-    # This preserves more edge detail
-    mask_binary = cv2.adaptiveThreshold(
-        mask,
-        255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        11,  # Block size
-        -2   # Constant subtracted from mean
-    )
+    # Use simple threshold (NOT adaptive - that corrupts RMBG masks!)
+    # RMBG produces high-quality alpha masks that should be preserved
+    _, mask_binary = cv2.threshold(mask, 10, 255, cv2.THRESH_BINARY)
 
-    # Clean up noise with morphological operations
+    # Clean up noise with morphological operations (minimal)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     mask_binary = cv2.morphologyEx(mask_binary, cv2.MORPH_CLOSE, kernel)
-    mask_binary = cv2.morphologyEx(mask_binary, cv2.MORPH_OPEN, kernel)
 
     # Slight feathering for smoother edges
     if feather > 0:

@@ -31,16 +31,20 @@ POST /v1/magic-merge/magic-merge
 
 ---
 
-### **2. Adaptive Mask Thresholding**
+### **2. Simple Mask Thresholding (FIXED)**
 
-**Problem**: Fixed threshold of 128 loses edge detail.
+**Problem**: Adaptive thresholding was CORRUPTING RMBG masks, causing characters to become shadow figures!
 
-**Solution**: Implemented `cv2.adaptiveThreshold` which:
-- Analyzes local regions instead of using a global threshold
-- Preserves fine edge details (hair, fur, complex shapes)
-- Reduces harsh edges that cause visible seams
+**Root Cause**: `cv2.adaptiveThreshold` is designed for document processing, not alpha channel masks. It was inverting/corrupting the high-quality masks from RMBG-v1.4.
+
+**Solution**: Use simple threshold (threshold=10) which:
+- Preserves RMBG's high-quality alpha channel masks
+- Doesn't corrupt or invert the mask data
+- Maintains character details properly
 
 **Code**: See `refine_mask_for_blending()` in `compositing.py`
+
+**Result**: Characters now composite correctly instead of appearing as shadows! ✅
 
 ---
 

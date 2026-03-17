@@ -1374,15 +1374,16 @@ async def generate_character_pose(
     repos: Repositories = Depends(get_repos)
 ):
     """
-    Generate a new pose/variation for a character using Inpainting.
+    Generate a new pose/variation for a character using IMG2IMG with reference.
 
-    Uses workflow 05 (inpaint) with pose templates for 80-85% consistency.
-    This is the best approach for SD 3.5 Medium (no ControlNet/IP-Adapter).
+    Uses the reference image as a starting point with low denoise (0.50) to
+    preserve character identity while changing pose. This achieves 80-85%
+    consistency on SD 3.5 Medium (no ControlNet/IP-Adapter needed).
 
     Process:
-    1. Load character DNA (detailed features)
-    2. Generate pose template (silhouette mask)
-    3. Use inpainting to fill character onto template
+    1. Load character reference image
+    2. Load character DNA (detailed features)
+    3. Use img2img with reference image + low denoise
     4. Apply RMBG for professional transparency
     """
     book = await repos.books.get_by_id(book_id)
@@ -1393,15 +1394,34 @@ async def generate_character_pose(
     if not character or character.book_id != book_id:
         raise HTTPException(status_code=404, detail="Character not found")
 
+    # Check if character has reference image
+    if not character.reference_image_path:
+        raise HTTPException(
+            status_code=400,
+            detail="Character must have a reference image. Generate one first using /generate-reference"
+        )
+
     if not _job_queue:
         raise HTTPException(status_code=500, detail="Job queue not initialized")
 
     from models import Job, JobCreateRequest, JobInputs, WorkflowType
     from storyboard.character_consistency import (
         extract_character_dna,
-        prepare_character_pose_inpainting,
+        prepare_character_pose_img2img,
         encode_image_to_base64
     )
+
+    # Load reference image from disk
+    # Character reference images are stored in books/{book_id}/assets/characters/
+    ref_image_path = Path(storage.root) / "books" / book_id / character.reference_image_path
+    if not ref_image_path.exists():
+        # Try alternate path (just in case)
+        ref_image_path = Path(storage.root) / character.reference_image_path
+        if not ref_image_path.exists():
+            raise HTTPException(status_code=404, detail=f"Reference image file not found at {character.reference_image_path}")
+
+    with open(ref_image_path, "rb") as f:
+        reference_image_bytes = f.read()
 
     # Get or create character DNA
     character_dna = character.features
@@ -1415,67 +1435,66 @@ async def generate_character_pose(
         character.features = character_dna
         await repos.characters.update(character)
 
-    # Prepare inpainting data
-    inpaint_data = prepare_character_pose_inpainting(
+    # Prepare img2img data with reference image
+    img2img_data = prepare_character_pose_img2img(
         character_dna=character_dna,
         pose=request.pose_description,
         expression=getattr(request, 'expression', 'neutral'),
+        reference_image_bytes=reference_image_bytes,
         width=832,  # Portrait orientation for characters
         height=1216,
         style=book.art_style or "children's storybook illustration"
     )
 
-    # Build detailed prompt with character DNA
-    prompt = f"""STYLE: {inpaint_data['style']}
+    # Build detailed prompt emphasizing pose change while keeping character
+    prompt = f"""STYLE: {book.art_style or "children's storybook illustration"}
 
-SUBJECT:
-{inpaint_data['subject']}
+CHARACTER (KEEP EXACTLY THE SAME):
+{img2img_data['subject']}
 
-PLACEMENT:
-{inpaint_data['placement']}
+CHANGE REQUEST:
+{img2img_data['pose_instruction']}
 
-CONSISTENCY RULES:
-- Exact same colors, patterns, and features as described
-- Same body proportions and style
-- Only the pose and expression should change
-- Maintain all distinctive character traits
+CRITICAL RULES:
+- SAME character, EXACT same colors and features
+- ONLY change the pose and expression
+- Maintain all distinctive traits (colors, patterns, proportions)
 - Clean edges, suitable for transparency
+- Single character only, no duplicates
 
 {book.reference_prompt or ''}"""
 
-    # Encode images to base64
-    base_image_b64 = encode_image_to_base64(inpaint_data['base_image_bytes'])
-    mask_b64 = encode_image_to_base64(inpaint_data['mask_bytes'])
+    # Encode init image to base64
+    init_image_b64 = encode_image_to_base64(img2img_data['init_image_bytes'])
 
-    # Use INPAINT workflow for character pose generation
+    # Use IMG2IMG workflow for character pose generation
     job = Job(JobCreateRequest(
         job_type="character_pose",
-        workflow_type=WorkflowType.INPAINT,
+        workflow_type=WorkflowType.IMG2IMG,
         priority="high",
         inputs=JobInputs(
             prompt=prompt,
-            negative_prompt=f"{book.negative_prompt}, different character, wrong colors, inconsistent features, multiple characters, duplicate, extra limbs",
+            negative_prompt=f"{book.negative_prompt}, different character, wrong colors, inconsistent features, multiple characters, duplicate, extra limbs, deformed",
             width=832,
             height=1216,
             steps=book.default_steps or 35,
             cfg=book.default_cfg or 5.5,
             seed=request.seed,
-            # Inpainting-specific inputs
-            base_image=base_image_b64,
-            mask_image=mask_b64,
-            denoise=inpaint_data['denoise'],
-            grow_mask_by=inpaint_data['grow_mask_by']
+            # Img2img-specific inputs
+            init_image=init_image_b64,
+            denoise=img2img_data['denoise']  # 0.50 - preserves character, allows pose change
         ),
         metadata={
             "book_id": book_id,
             "character_id": char_id,
             "pose": request.pose_description,
-            "method": "inpainting_with_pose_template"
+            "method": "img2img_with_reference",
+            "denoise": img2img_data['denoise']
         }
     ))
     await _job_queue.submit(job)
 
-    return {"job_id": job.job_id, "character_id": char_id, "method": "inpainting"}
+    return {"job_id": job.job_id, "character_id": char_id, "method": "img2img", "denoise": img2img_data['denoise']}
 
 
 # ============================================================

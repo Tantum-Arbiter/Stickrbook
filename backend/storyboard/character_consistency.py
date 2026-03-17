@@ -266,7 +266,8 @@ def prepare_character_pose_inpainting(
     expression: str = "neutral",
     width: int = 832,
     height: int = 1216,
-    style: str = "children's storybook illustration"
+    style: str = "children's storybook illustration",
+    reference_image_bytes: Optional[bytes] = None
 ) -> Dict:
     """
     Prepare all data needed for character pose generation via inpainting.
@@ -274,7 +275,7 @@ def prepare_character_pose_inpainting(
     This creates:
     1. A detailed prompt from character DNA
     2. A pose template (silhouette mask)
-    3. A blank base image
+    3. Uses reference image as base (if provided) or blank canvas
 
     Args:
         character_dna: Character DNA dict with features
@@ -283,6 +284,7 @@ def prepare_character_pose_inpainting(
         width: Image width
         height: Image height
         style: Art style
+        reference_image_bytes: Optional reference image to use as base
 
     Returns:
         dict with 'prompt', 'base_image_bytes', 'mask_bytes'
@@ -293,11 +295,28 @@ def prepare_character_pose_inpainting(
     # Generate pose template
     template_bytes, mask_bytes = generate_pose_template(width, height, pose)
 
-    # Create blank base image (white background)
-    base_image = Image.new('RGB', (width, height), color='white')
-    base_io = io.BytesIO()
-    base_image.save(base_io, format='PNG')
-    base_bytes = base_io.getvalue()
+    # Use reference image as base if provided, otherwise blank canvas
+    if reference_image_bytes:
+        # Load reference image and resize to target dimensions
+        ref_image = Image.open(io.BytesIO(reference_image_bytes))
+        ref_image = ref_image.convert('RGB')
+        ref_image = ref_image.resize((width, height), Image.Resampling.LANCZOS)
+
+        base_io = io.BytesIO()
+        ref_image.save(base_io, format='PNG')
+        base_bytes = base_io.getvalue()
+
+        # Lower denoise when using reference image
+        denoise = 0.65  # Preserve more of the reference character
+    else:
+        # Create blank base image (white background)
+        base_image = Image.new('RGB', (width, height), color='white')
+        base_io = io.BytesIO()
+        base_image.save(base_io, format='PNG')
+        base_bytes = base_io.getvalue()
+
+        # Higher denoise when creating from scratch
+        denoise = 0.95
 
     return {
         "prompt": prompt,
@@ -306,8 +325,68 @@ def prepare_character_pose_inpainting(
         "placement": f"{pose} pose, {expression} expression, centered in frame",
         "base_image_bytes": base_bytes,
         "mask_bytes": mask_bytes,
-        "denoise": 0.95,  # High denoise since we're creating from scratch
+        "denoise": denoise,
         "grow_mask_by": 6  # Minimal grow for clean edges
+    }
+
+
+def prepare_character_pose_img2img(
+    character_dna: Dict,
+    pose: str,
+    expression: str = "neutral",
+    reference_image_bytes: bytes = None,
+    width: int = 832,
+    height: int = 1216,
+    style: str = "children's storybook illustration"
+) -> Dict:
+    """
+    Prepare data for character pose generation using IMG2IMG with reference.
+
+    This is MORE EFFECTIVE than inpainting for character consistency because:
+    - Uses the actual reference image pixels as starting point
+    - Lower denoise (0.45-0.55) preserves character features
+    - Only modifies pose/expression, keeps character identity
+
+    Args:
+        character_dna: Character DNA dict with features
+        pose: Pose description
+        expression: Expression
+        reference_image_bytes: Reference image bytes (REQUIRED)
+        width: Target width
+        height: Target height
+        style: Art style
+
+    Returns:
+        dict with 'prompt', 'init_image_bytes', 'denoise'
+    """
+    if not reference_image_bytes:
+        raise ValueError("Reference image is required for img2img pose generation")
+
+    # Build detailed prompt emphasizing pose change
+    base_prompt = build_detailed_prompt(character_dna, pose, expression)
+
+    # Add strong emphasis on maintaining character identity
+    prompt = f"{base_prompt}, SAME character, EXACT same colors and features, ONLY pose and expression changed"
+
+    # Load and resize reference image
+    ref_image = Image.open(io.BytesIO(reference_image_bytes))
+    ref_image = ref_image.convert('RGB')
+    ref_image = ref_image.resize((width, height), Image.Resampling.LANCZOS)
+
+    # Convert to bytes
+    init_io = io.BytesIO()
+    ref_image.save(init_io, format='PNG')
+    init_bytes = init_io.getvalue()
+
+    return {
+        "prompt": prompt,
+        "style": style,
+        "subject": base_prompt,
+        "pose_instruction": f"Change to: {pose} pose, {expression} expression",
+        "init_image_bytes": init_bytes,
+        "denoise": 0.50,  # CRITICAL: Low denoise preserves character, allows pose change
+        "width": width,
+        "height": height
     }
 
 
