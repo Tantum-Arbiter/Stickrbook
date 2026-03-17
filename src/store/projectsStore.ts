@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { projectsApi, booksApi, pagesApi, assetsApi, ApiClientError } from '../api';
 import type {
   ProjectState,
@@ -94,20 +95,22 @@ const transformAsset = (a: Record<string, unknown>): Asset => ({
   createdAt: a.created_at as string,
 });
 
-export const useProjectsStore = create<ProjectState>((set, get) => ({
-  // Initial state
-  projects: [],
-  currentProjectId: null,
-  currentBookId: null,
-  currentPageId: null,
-  isLoading: false,
-  error: null,
+export const useProjectsStore = create<ProjectState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      projects: [],
+      currentProjectId: null,
+      currentBookId: null,
+      currentPageId: null,
+      isLoading: false,
+      error: null,
 
-  // Computed getters
-  currentProject: () => {
-    const { projects, currentProjectId } = get();
-    return projects.find((p: Project) => p.id === currentProjectId);
-  },
+      // Computed getters
+      currentProject: () => {
+        const { projects, currentProjectId } = get();
+        return projects.find((p: Project) => p.id === currentProjectId);
+      },
 
   currentBook: () => {
     const project = get().currentProject();
@@ -403,5 +406,16 @@ export const useProjectsStore = create<ProjectState>((set, get) => ({
       set({ error: message });
     }
   },
-}));
+    }),
+    {
+      name: 'stickrbook-projects-selection',
+      // Only persist the selection state, not the full projects data
+      partialize: (state) => ({
+        currentProjectId: state.currentProjectId,
+        currentBookId: state.currentBookId,
+        currentPageId: state.currentPageId,
+      }),
+    }
+  )
+);
 
