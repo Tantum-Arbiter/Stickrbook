@@ -59,5 +59,10 @@
     "msw": "^2.12.10",
     "prettier": "^3.8.1",
     "vitest": "^4.1.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
