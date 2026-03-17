@@ -11,30 +11,30 @@ $ErrorActionPreference = "Stop"
 # Logging functions
 function Log-Info {
     param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor Blue
+    Write-Host "INFO: $Message" -ForegroundColor Blue
 }
 
 function Log-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "SUCCESS: $Message" -ForegroundColor Green
 }
 
 function Log-Warning {
     param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
+    Write-Host "WARNING: $Message" -ForegroundColor Yellow
 }
 
 function Log-Error {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    Write-Host "ERROR: $Message" -ForegroundColor Red
 }
 
 function Log-Section {
     param([string]$Message)
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host "  $Message" -ForegroundColor Blue
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host ""
 }
 
@@ -240,15 +240,15 @@ try {
 # Step 6: Summary
 ###############################################################################
 
-Log-Section "Setup Complete! 🎉"
+Log-Section "Setup Complete!"
 
 Write-Host ""
-Write-Host "✓ Frontend dependencies installed" -ForegroundColor Green
-Write-Host "✓ Backend dependencies installed" -ForegroundColor Green
-Write-Host "✓ Database initialized" -ForegroundColor Green
-Write-Host "✓ Environment configured" -ForegroundColor Green
+Write-Host "SUCCESS: Frontend dependencies installed" -ForegroundColor Green
+Write-Host "SUCCESS: Backend dependencies installed" -ForegroundColor Green
+Write-Host "SUCCESS: Database initialized" -ForegroundColor Green
+Write-Host "SUCCESS: Environment configured" -ForegroundColor Green
 if ($installAi -match "^[Yy]") {
-    Write-Host "✓ AI dependencies installed" -ForegroundColor Green
+    Write-Host "SUCCESS: AI dependencies installed" -ForegroundColor Green
 }
 Write-Host ""
 

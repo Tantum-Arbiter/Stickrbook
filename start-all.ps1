@@ -10,25 +10,25 @@ $ErrorActionPreference = "Stop"
 # Logging functions
 function Log-Info {
     param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor Blue
+    Write-Host "INFO: $Message" -ForegroundColor Blue
 }
 
 function Log-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "SUCCESS: $Message" -ForegroundColor Green
 }
 
 function Log-Error {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    Write-Host "ERROR: $Message" -ForegroundColor Red
 }
 
 function Log-Section {
     param([string]$Message)
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host "  $Message" -ForegroundColor Blue
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host ""
 }
 
@@ -36,7 +36,7 @@ function Log-Section {
 # Check if services are already running
 ###############################################################################
 
-Log-Section "🚀 Starting Stickrbook Services"
+Log-Section "Starting Stickrbook Services"
 
 # Check if backend is already running
 $backendRunning = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
@@ -159,18 +159,16 @@ if (-not $frontendReady) {
 # Summary
 ###############################################################################
 
-Log-Section "✅ All Services Running!"
+Log-Section "All Services Running!"
 
 Write-Host ""
-Write-Host "✓ ComfyUI:  http://localhost:8188" -ForegroundColor Green
-Write-Host "✓ Backend:   http://localhost:8000" -ForegroundColor Green
-Write-Host "✓ Frontend:  http://localhost:5173" -ForegroundColor Green
+Write-Host "SUCCESS: ComfyUI:  http://localhost:8188" -ForegroundColor Green
+Write-Host "SUCCESS: Backend:   http://localhost:8000" -ForegroundColor Green
+Write-Host "SUCCESS: Frontend:  http://localhost:5173" -ForegroundColor Green
 Write-Host ""
-Write-Host "📖 Open your browser to: " -NoNewline
-Write-Host "http://localhost:5173" -ForegroundColor Green
+Write-Host "Open your browser to: http://localhost:5173" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "🛑 To stop all services: " -NoNewline
-Write-Host ".\stop-all.ps1" -ForegroundColor Yellow
+Write-Host "To stop all services: .\stop-all.ps1" -ForegroundColor Yellow
 Write-Host ""
 
 # Open browser

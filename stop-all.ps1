@@ -8,29 +8,29 @@
 # Logging functions
 function Log-Info {
     param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor Blue
+    Write-Host "INFO: $Message" -ForegroundColor Blue
 }
 
 function Log-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "SUCCESS: $Message" -ForegroundColor Green
 }
 
 function Log-Warning {
     param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
+    Write-Host "WARNING: $Message" -ForegroundColor Yellow
 }
 
 function Log-Section {
     param([string]$Message)
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host "  $Message" -ForegroundColor Blue
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Blue
+    Write-Host "============================================================" -ForegroundColor Blue
     Write-Host ""
 }
 
-Log-Section "🛑 Stopping Stickrbook Services"
+Log-Section "Stopping Stickrbook Services"
 
 ###############################################################################
 # Stop Backend
@@ -114,7 +114,7 @@ try {
 # Summary
 ###############################################################################
 
-Log-Section "✅ Services Stopped"
+Log-Section "Services Stopped"
 
 Write-Host ""
 Write-Host "All Stickrbook services have been stopped." -ForegroundColor Green
