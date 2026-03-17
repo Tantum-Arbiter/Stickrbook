@@ -126,35 +126,68 @@ def alpha_blend(
 ) -> np.ndarray:
     """
     Simple alpha blending
-    
+
     Args:
         source: Source image array
         target: Target image array
         mask: Alpha mask array
         position: {'x': int, 'y': int} top-left position
-        
+
     Returns:
         Blended image array
     """
     result = target.copy()
-    
+
     x, y = position['x'], position['y']
     h, w = source.shape[:2]
-    
-    # Ensure we don't go out of bounds
-    x = max(0, min(x, target.shape[1] - w))
-    y = max(0, min(y, target.shape[0] - h))
-    
+
+    # Ensure mask matches source dimensions
+    if mask.shape[:2] != source.shape[:2]:
+        mask = cv2.resize(mask, (source.shape[1], source.shape[0]))
+
+    # Calculate the region to blend (handle out of bounds)
+    # Source region
+    src_x1, src_y1 = 0, 0
+    src_x2, src_y2 = w, h
+
+    # Target region
+    tgt_x1, tgt_y1 = x, y
+    tgt_x2, tgt_y2 = x + w, y + h
+
+    # Clip to target bounds and adjust source region accordingly
+    if tgt_x1 < 0:
+        src_x1 = -tgt_x1
+        tgt_x1 = 0
+    if tgt_y1 < 0:
+        src_y1 = -tgt_y1
+        tgt_y1 = 0
+    if tgt_x2 > target.shape[1]:
+        src_x2 = w - (tgt_x2 - target.shape[1])
+        tgt_x2 = target.shape[1]
+    if tgt_y2 > target.shape[0]:
+        src_y2 = h - (tgt_y2 - target.shape[0])
+        tgt_y2 = target.shape[0]
+
+    # Extract the regions to blend
+    source_region = source[src_y1:src_y2, src_x1:src_x2]
+    mask_region = mask[src_y1:src_y2, src_x1:src_x2]
+    target_region = result[tgt_y1:tgt_y2, tgt_x1:tgt_x2]
+
+    # Ensure regions match
+    if source_region.shape[:2] != target_region.shape[:2]:
+        print(f"Warning: Region mismatch - source {source_region.shape}, target {target_region.shape}")
+        return result
+
     # Normalize mask to 0-1
-    alpha = mask.astype(float) / 255.0
+    alpha = mask_region.astype(float) / 255.0
     if len(alpha.shape) == 2:
         alpha = alpha[:, :, np.newaxis]
-    
+
     # Blend
-    result[y:y+h, x:x+w] = (
-        source * alpha + result[y:y+h, x:x+w] * (1 - alpha)
+    result[tgt_y1:tgt_y2, tgt_x1:tgt_x2] = (
+        source_region * alpha + target_region * (1 - alpha)
     ).astype(np.uint8)
-    
+
     return result
 
 
@@ -166,44 +199,72 @@ def add_shadow(
 ) -> np.ndarray:
     """
     Add drop shadow to background
-    
+
     Args:
         background: Background image array
         mask: Subject mask
         position: Subject position
         shadow_params: {'x': int, 'y': int, 'blur': int, 'opacity': float}
-        
+
     Returns:
         Background with shadow added
     """
     result = background.copy()
-    
+
     # Create shadow mask
     shadow_mask = mask.copy()
-    
+
     # Blur shadow
     blur_radius = shadow_params.get('blur', 20)
     if blur_radius > 0:
         shadow_mask = cv2.GaussianBlur(shadow_mask, (blur_radius*2+1, blur_radius*2+1), 0)
-    
+
     # Position shadow
     shadow_x = position['x'] + shadow_params.get('x', 10)
     shadow_y = position['y'] + shadow_params.get('y', 10)
-    
+
     # Apply shadow with opacity
     opacity = shadow_params.get('opacity', 0.5)
     h, w = shadow_mask.shape[:2]
-    
-    # Ensure we don't go out of bounds
-    shadow_x = max(0, min(shadow_x, background.shape[1] - w))
-    shadow_y = max(0, min(shadow_y, background.shape[0] - h))
-    
+
+    # Calculate the region to apply shadow (handle out of bounds)
+    # Shadow region
+    shd_x1, shd_y1 = 0, 0
+    shd_x2, shd_y2 = w, h
+
+    # Background region
+    bg_x1, bg_y1 = shadow_x, shadow_y
+    bg_x2, bg_y2 = shadow_x + w, shadow_y + h
+
+    # Clip to background bounds
+    if bg_x1 < 0:
+        shd_x1 = -bg_x1
+        bg_x1 = 0
+    if bg_y1 < 0:
+        shd_y1 = -bg_y1
+        bg_y1 = 0
+    if bg_x2 > background.shape[1]:
+        shd_x2 = w - (bg_x2 - background.shape[1])
+        bg_x2 = background.shape[1]
+    if bg_y2 > background.shape[0]:
+        shd_y2 = h - (bg_y2 - background.shape[0])
+        bg_y2 = background.shape[0]
+
+    # Extract regions
+    shadow_region = shadow_mask[shd_y1:shd_y2, shd_x1:shd_x2]
+    bg_region = result[bg_y1:bg_y2, bg_x1:bg_x2]
+
+    # Ensure regions match
+    if shadow_region.shape[:2] != bg_region.shape[:2]:
+        print(f"Warning: Shadow region mismatch - shadow {shadow_region.shape}, bg {bg_region.shape}")
+        return result
+
     # Darken background where shadow is
-    shadow_alpha = (shadow_mask.astype(float) / 255.0 * opacity)[:, :, np.newaxis]
-    result[shadow_y:shadow_y+h, shadow_x:shadow_x+w] = (
-        result[shadow_y:shadow_y+h, shadow_x:shadow_x+w] * (1 - shadow_alpha * 0.5)
+    shadow_alpha = (shadow_region.astype(float) / 255.0 * opacity)[:, :, np.newaxis]
+    result[bg_y1:bg_y2, bg_x1:bg_x2] = (
+        bg_region * (1 - shadow_alpha * 0.5)
     ).astype(np.uint8)
-    
+
     return result
 
 
