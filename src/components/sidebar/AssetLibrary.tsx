@@ -68,6 +68,8 @@ export function AssetLibrary({
   });
   const [contextMenuCollection, setContextMenuCollection] = useState<string | null>(null);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const [colorPickerCollection, setColorPickerCollection] = useState<string | null>(null);
+  const [customColorInput, setCustomColorInput] = useState('');
 
   const toast = useToast();
   const updateAsset = useProjectsStore((s) => s.updateAsset);
@@ -617,7 +619,13 @@ export function AssetLibrary({
       </div>
 
       {/* Asset Grid - Grouped by Collection */}
-      <div className="sidebar-asset-grid">
+      <div className="sidebar-asset-grid" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}>
         {Object.keys(assetsByCollection).length > 0 ? (
           Object.entries(assetsByCollection).map(([collection, collectionAssets]) => {
             const isCollapsed = collapsedCollections.has(collection);
@@ -626,7 +634,11 @@ export function AssetLibrary({
             const collectionColor = collectionColors[collection];
 
             return (
-              <div key={collection} style={{ marginBottom: '16px' }}>
+              <div key={collection} style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flexShrink: 0
+              }}>
                 {/* Collection Header - Droppable */}
                 <div
                   style={{
@@ -679,16 +691,18 @@ export function AssetLibrary({
 
                   {/* Collection Actions - Only for named collections */}
                   {!isUncategorized && (
-                    <div style={{ display: 'flex', gap: '4px' }} onClick={(e) => e.stopPropagation()}>
-                      {/* Color Picker */}
-                      <input
-                        type="color"
-                        value={collectionColor || '#6366f1'}
-                        onChange={(e) => setCollectionColor(collection, e.target.value)}
+                    <div style={{ display: 'flex', gap: '4px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                      {/* Color Picker Button */}
+                      <button
+                        onClick={() => {
+                          setColorPickerCollection(collection);
+                          setCustomColorInput(collectionColor || '#6366f1');
+                        }}
                         style={{
+                          background: collectionColor || '#6366f1',
+                          border: '2px solid var(--border)',
                           width: '24px',
                           height: '24px',
-                          border: 'none',
                           borderRadius: '4px',
                           cursor: 'pointer',
                           padding: 0
@@ -763,6 +777,93 @@ export function AssetLibrary({
           </div>
         )}
       </div>
+
+      {/* Custom Color Picker Dialog */}
+      {colorPickerCollection && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setColorPickerCollection(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: 'var(--radius-md)',
+              padding: '24px',
+              maxWidth: '300px',
+              width: '90%',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
+              Set Collection Color
+            </h3>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Choose a color
+              </label>
+              <input
+                type="color"
+                value={customColorInput}
+                onChange={(e) => setCustomColorInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  cursor: 'pointer',
+                }}
+              />
+              <input
+                type="text"
+                value={customColorInput}
+                onChange={(e) => setCustomColorInput(e.target.value)}
+                placeholder="#6366f1"
+                style={{
+                  width: '100%',
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setColorPickerCollection(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setCollectionColor(colorPickerCollection, customColorInput);
+                  setColorPickerCollection(null);
+                }}
+              >
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

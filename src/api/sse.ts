@@ -48,43 +48,55 @@ export function subscribeToJobEvents(
 
   eventSource.addEventListener('status', (event) => {
     try {
+      // Skip empty or invalid data
+      if (!event.data || event.data.trim() === '') return;
+
       const data = JSON.parse(event.data) as SSEStatusEvent;
       handlers.onStatus?.(data);
     } catch (e) {
-      console.error('Failed to parse status event:', e);
+      console.error('Failed to parse status event:', e, 'Data:', event.data);
     }
   });
 
   eventSource.addEventListener('progress', (event) => {
     try {
+      // Skip empty or invalid data
+      if (!event.data || event.data.trim() === '') return;
+
       const data = JSON.parse(event.data) as SSEProgressEvent;
       handlers.onProgress?.(data);
     } catch (e) {
-      console.error('Failed to parse progress event:', e);
+      console.error('Failed to parse progress event:', e, 'Data:', event.data);
     }
   });
 
   eventSource.addEventListener('completed', (event) => {
     try {
+      // Skip empty or invalid data
+      if (!event.data || event.data.trim() === '') return;
+
       const data = JSON.parse(event.data) as SSECompletedEvent;
       handlers.onCompleted?.(data);
       // Close connection on completion
       eventSource.close();
       handlers.onClose?.();
     } catch (e) {
-      console.error('Failed to parse completed event:', e);
+      console.error('Failed to parse completed event:', e, 'Data:', event.data);
     }
   });
 
   eventSource.addEventListener('failed', (event) => {
     try {
+      // Skip empty or invalid data
+      if (!event.data || event.data.trim() === '') return;
+
       const data = JSON.parse(event.data) as SSEFailedEvent;
       handlers.onFailed?.(data);
       // Close connection on failure
       eventSource.close();
       handlers.onClose?.();
     } catch (e) {
-      console.error('Failed to parse failed event:', e);
+      console.error('Failed to parse failed event:', e, 'Data:', event.data);
     }
   });
 
