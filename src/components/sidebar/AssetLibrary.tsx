@@ -66,6 +66,11 @@ export function AssetLibrary({
     const saved = localStorage.getItem('stickrbook-empty-collections');
     return saved ? JSON.parse(saved) : [];
   });
+  const [collectionOrder, setCollectionOrder] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('stickrbook-collection-order');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [draggedCollection, setDraggedCollection] = useState<string | null>(null);
   const [contextMenuCollection, setContextMenuCollection] = useState<string | null>(null);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [colorPickerCollection, setColorPickerCollection] = useState<string | null>(null);
@@ -128,8 +133,41 @@ export function AssetLibrary({
     });
     // Add empty collections
     emptyCollections.forEach(c => collections.add(c));
-    return Array.from(collections).sort();
-  }, [assets, activeTab, emptyCollections]);
+
+    // Sort by custom order, then alphabetically
+    return Array.from(collections).sort((a, b) => {
+      const orderA = collectionOrder[a] ?? 999999;
+      const orderB = collectionOrder[b] ?? 999999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.localeCompare(b);
+    });
+  }, [assets, activeTab, emptyCollections, collectionOrder]);
+
+  // Group collections by asset type
+  const collectionsByType = useMemo(() => {
+    const byType: Record<AssetType, string[]> = {
+      character: [],
+      background: [],
+      object: [],
+      reference: [],
+    };
+
+    // Group collections by their primary asset type
+    allCollections.forEach(collection => {
+      const assetsInCollection = assets.filter(a => a.collection === collection);
+      if (assetsInCollection.length > 0) {
+        // Use the most common asset type in this collection
+        const typeCounts: Record<string, number> = {};
+        assetsInCollection.forEach(a => {
+          typeCounts[a.assetType] = (typeCounts[a.assetType] || 0) + 1;
+        });
+        const primaryType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0] as AssetType;
+        byType[primaryType].push(collection);
+      }
+    });
+
+    return byType;
+  }, [allCollections, assets]);
 
   // Group assets by collection (including empty collections)
   const assetsByCollection = useMemo(() => {
@@ -435,6 +473,67 @@ export function AssetLibrary({
     }
   }, [selectedAssets, updateAsset, toast, clearSelection, emptyCollections]);
 
+  // Collection drag-and-drop for reordering
+  const handleCollectionDragStart = useCallback((collection: string, e: React.DragEvent) => {
+    e.stopPropagation();
+    setDraggedCollection(collection);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleCollectionDragOverForReorder = useCallback((e: React.DragEvent) => {
+    if (draggedCollection) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  }, [draggedCollection]);
+
+  const handleCollectionDropForReorder = useCallback((targetCollection: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedCollection || draggedCollection === targetCollection) {
+      setDraggedCollection(null);
+      return;
+    }
+
+    // Reorder collections
+    const sourceIndex = allCollections.indexOf(draggedCollection);
+    const targetIndex = allCollections.indexOf(targetCollection);
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+      setDraggedCollection(null);
+      return;
+    }
+
+    // Create new order mapping
+    const newOrder: Record<string, number> = { ...collectionOrder };
+    allCollections.forEach((col, idx) => {
+      if (col === draggedCollection) {
+        newOrder[col] = targetIndex;
+      } else if (sourceIndex < targetIndex) {
+        // Moving down: shift items between source and target up
+        if (idx > sourceIndex && idx <= targetIndex) {
+          newOrder[col] = idx - 1;
+        } else {
+          newOrder[col] = idx;
+        }
+      } else {
+        // Moving up: shift items between target and source down
+        if (idx >= targetIndex && idx < sourceIndex) {
+          newOrder[col] = idx + 1;
+        } else {
+          newOrder[col] = idx;
+        }
+      }
+    });
+
+    setCollectionOrder(newOrder);
+    localStorage.setItem('stickrbook-collection-order', JSON.stringify(newOrder));
+    setDraggedCollection(null);
+    toast.success(`Reordered "${draggedCollection}"`);
+  }, [draggedCollection, allCollections, collectionOrder, toast]);
+
   return (
     <div className={`asset-library ${className}`}>
       {/* Asset Type Tabs */}
@@ -618,7 +717,7 @@ export function AssetLibrary({
         </div>
       </div>
 
-      {/* Asset Grid - Grouped by Collection */}
+      {/* Asset Grid - Grouped by Asset Type (when viewing All) or Collection */}
       <div className="sidebar-asset-grid" style={{
         display: 'flex',
         flexDirection: 'column',
@@ -627,7 +726,240 @@ export function AssetLibrary({
         overflowX: 'hidden'
       }}>
         {Object.keys(assetsByCollection).length > 0 ? (
-          Object.entries(assetsByCollection).map(([collection, collectionAssets]) => {
+          <>
+            {/* When viewing "All", group collections by asset type */}
+            {activeTab === 'all' && (
+              <>
+                {(['background', 'character', 'object', 'reference'] as AssetType[]).map(assetType => {
+                  const typeCollections = collectionsByType[assetType];
+                  if (!typeCollections || typeCollections.length === 0) return null;
+
+                  const typeTab = ASSET_TABS.find(t => t.type === assetType);
+                  if (!typeTab) return null;
+
+                  return (
+                    <div key={assetType} style={{ marginBottom: '16px' }}>
+                      {/* Asset Type Header */}
+                      <div style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        color: 'var(--text-muted)',
+                        padding: '8px 8px 4px 8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        letterSpacing: '0.5px'
+                      }}>
+                        {typeTab.icon}
+                        <span>{typeTab.label}</span>
+                      </div>
+
+                      {/* Collections for this type */}
+                      {typeCollections.map(collection => {
+                        const collectionAssets = assetsByCollection[collection] || [];
+                        const isCollapsed = collapsedCollections.has(collection);
+                        const FolderIcon = isCollapsed ? Folder : FolderOpen;
+                        const collectionColor = collectionColors[collection];
+
+                        return (
+                          <div key={collection} style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flexShrink: 0,
+                            marginBottom: '8px'
+                          }}>
+                            {/* Collection Header */}
+                            <div
+                              draggable
+                              onDragStart={(e) => handleCollectionDragStart(collection, e)}
+                              onDragOver={(e) => {
+                                handleCollectionDragOver(e);
+                                handleCollectionDragOverForReorder(e);
+                              }}
+                              onDrop={(e) => {
+                                handleCollectionDrop(collection, e);
+                                handleCollectionDropForReorder(collection, e);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px',
+                                background: draggedAsset && draggedAsset.collection !== collection
+                                  ? 'var(--accent-bg)'
+                                  : draggedCollection === collection
+                                  ? 'var(--bg-hover)'
+                                  : 'var(--bg-card)',
+                                borderRadius: 'var(--radius-sm)',
+                                marginBottom: '8px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                border: draggedAsset && draggedAsset.collection !== collection
+                                  ? '2px dashed var(--accent-color)'
+                                  : draggedCollection && draggedCollection !== collection
+                                  ? '2px dashed var(--text-muted)'
+                                  : collectionColor
+                                  ? `2px solid ${collectionColor}`
+                                  : '2px solid transparent',
+                                transition: 'all 0.2s',
+                                position: 'relative',
+                                cursor: 'grab',
+                                opacity: draggedCollection === collection ? 0.5 : 1,
+                              }}
+                            >
+                              {/* Drag Handle */}
+                              <div
+                                style={{
+                                  cursor: 'grab',
+                                  color: 'var(--text-muted)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  padding: '0 4px'
+                                }}
+                                title="Drag to reorder"
+                              >
+                                <Move size={14} />
+                              </div>
+
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, cursor: 'pointer' }}
+                                onClick={() => toggleCollection(collection)}
+                              >
+                                {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                <FolderIcon
+                                  size={16}
+                                  style={{ color: collectionColor || 'var(--accent-color)' }}
+                                />
+                                {collectionColor && (
+                                  <div style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    background: collectionColor
+                                  }} />
+                                )}
+                                <span>{collection}</span>
+                                <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                  {collectionAssets.length}
+                                </span>
+                              </div>
+
+                              {/* Collection Actions */}
+                              <div style={{ display: 'flex', gap: '4px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => {
+                                    setColorPickerCollection(collection);
+                                    setCustomColorInput(collectionColor || '#6366f1');
+                                  }}
+                                  style={{
+                                    background: collectionColor || '#6366f1',
+                                    border: '2px solid var(--border)',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    padding: 0
+                                  }}
+                                  title="Set collection color"
+                                />
+                                <button
+                                  onClick={() => renameCollection(collection)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    color: 'var(--text-secondary)'
+                                  }}
+                                  title="Rename collection"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => deleteCollection(collection)}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    color: 'var(--text-secondary)'
+                                  }}
+                                  title="Delete collection"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Collection Assets */}
+                            {!isCollapsed && (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                                {collectionAssets.map((asset) => (
+                                  <AssetThumbnail
+                                    key={asset.id}
+                                    asset={asset}
+                                    isSelected={selectedAssets.has(asset.id)}
+                                    onClick={(e) => {
+                                      toggleAssetSelection(asset.id, e);
+                                      if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                                        onAssetClick?.(asset);
+                                      }
+                                    }}
+                                    onDragStart={(e) => handleAssetDragStart(asset, e)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+
+                {/* Uncategorized assets */}
+                {assetsByCollection['Uncategorized'] && assetsByCollection['Uncategorized'].length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: 'var(--text-muted)',
+                      padding: '8px 8px 4px 8px',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Uncategorized
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px', padding: '8px' }}>
+                      {assetsByCollection['Uncategorized'].map((asset) => (
+                        <AssetThumbnail
+                          key={asset.id}
+                          asset={asset}
+                          isSelected={selectedAssets.has(asset.id)}
+                          onClick={(e) => {
+                            toggleAssetSelection(asset.id, e);
+                            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                              onAssetClick?.(asset);
+                            }
+                          }}
+                          onDragStart={(e) => handleAssetDragStart(asset, e)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* When viewing specific type, show collections normally */}
+            {activeTab !== 'all' && Object.entries(assetsByCollection).map(([collection, collectionAssets]) => {
             const isCollapsed = collapsedCollections.has(collection);
             const isUncategorized = collection === 'Uncategorized';
             const FolderIcon = isCollapsed ? Folder : FolderOpen;
@@ -639,8 +971,18 @@ export function AssetLibrary({
                 flexDirection: 'column',
                 flexShrink: 0
               }}>
-                {/* Collection Header - Droppable */}
+                {/* Collection Header - Droppable and Draggable */}
                 <div
+                  draggable={!isUncategorized}
+                  onDragStart={(e) => !isUncategorized && handleCollectionDragStart(collection, e)}
+                  onDragOver={(e) => {
+                    handleCollectionDragOver(e);
+                    handleCollectionDragOverForReorder(e);
+                  }}
+                  onDrop={(e) => {
+                    handleCollectionDrop(isUncategorized ? null : collection, e);
+                    handleCollectionDropForReorder(collection, e);
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -648,6 +990,8 @@ export function AssetLibrary({
                     padding: '8px',
                     background: draggedAsset && draggedAsset.collection !== collection
                       ? 'var(--accent-bg)'
+                      : draggedCollection === collection
+                      ? 'var(--bg-hover)'
                       : 'var(--bg-card)',
                     borderRadius: 'var(--radius-sm)',
                     marginBottom: '8px',
@@ -655,15 +999,33 @@ export function AssetLibrary({
                     fontWeight: 600,
                     border: draggedAsset && draggedAsset.collection !== collection
                       ? '2px dashed var(--accent-color)'
+                      : draggedCollection && draggedCollection !== collection
+                      ? '2px dashed var(--text-muted)'
                       : collectionColor
                       ? `2px solid ${collectionColor}`
                       : '2px solid transparent',
                     transition: 'all 0.2s',
                     position: 'relative',
+                    cursor: isUncategorized ? 'default' : 'grab',
+                    opacity: draggedCollection === collection ? 0.5 : 1,
                   }}
-                  onDragOver={handleCollectionDragOver}
-                  onDrop={(e) => handleCollectionDrop(isUncategorized ? null : collection, e)}
                 >
+                  {/* Drag Handle - Only for named collections */}
+                  {!isUncategorized && (
+                    <div
+                      style={{
+                        cursor: 'grab',
+                        color: 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 4px'
+                      }}
+                      title="Drag to reorder"
+                    >
+                      <Move size={14} />
+                    </div>
+                  )}
+
                   <div
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, cursor: 'pointer' }}
                     onClick={() => toggleCollection(collection)}
@@ -770,7 +1132,8 @@ export function AssetLibrary({
                 )}
               </div>
             );
-          })
+          })}
+          </>
         ) : (
           <div className="asset-empty">
             <p>No assets found</p>
