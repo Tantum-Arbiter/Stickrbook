@@ -13,6 +13,8 @@ async function enableMocking() {
 
   return worker.start({
     onUnhandledRequest: 'bypass',
+  }).then(() => {
+    console.log('[MSW] ✅ Mocking enabled!')
   })
 }
 
