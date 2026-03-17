@@ -272,6 +272,45 @@ npm run dev
 ```
 
 ### Backend won't start
+
+**Error: "Error loading ASGI app. Could not import module 'main'"**
+
+This means you're not in the correct directory or the virtual environment isn't activated.
+
+**Fix:**
+```bash
+# macOS/Linux
+# 1. Navigate to backend directory
+cd backend
+
+# 2. Verify you're in the right place
+pwd  # Should show: .../Stickrbook/backend
+ls main.py  # Should show: main.py
+
+# 3. Activate virtual environment
+source venv/bin/activate
+
+# 4. Start uvicorn
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+```powershell
+# Windows
+# 1. Navigate to backend directory
+cd backend
+
+# 2. Verify you're in the right place
+pwd  # Should show: ...\Stickrbook\backend
+ls main.py  # Should show: main.py
+
+# 3. Activate virtual environment
+.\venv\Scripts\Activate.ps1
+
+# 4. Start uvicorn
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Other backend issues:**
 ```bash
 # Check Python version
 python --version  # Should be 3.10+
@@ -293,17 +332,54 @@ cat backend/.env | grep COMFYUI_URL
 ```
 
 ### Magic Merge errors
+
+**Error: "no onnxruntime backend found, please install rembg with cpu or gpu support"**
+
+This means AI dependencies aren't installed. You have two options:
+
+**Option 1: Install AI Dependencies (Recommended)**
 ```bash
-# Install AI dependencies
+# macOS/Linux
 cd backend
+source venv/bin/activate
 pip install -r requirements-ai.txt
 
-# For GPU support
+# For GPU support (NVIDIA only)
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
-# For CPU only
-export MAGIC_MERGE_DEVICE=cpu
+# For CPU only, edit backend/.env:
+# MAGIC_MERGE_DEVICE=cpu
 ```
+
+```powershell
+# Windows
+cd backend
+.\venv\Scripts\Activate.ps1
+pip install -r requirements-ai.txt
+
+# For GPU support (NVIDIA only)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# For CPU only, edit backend/.env:
+# MAGIC_MERGE_DEVICE=cpu
+```
+
+**Option 2: Temporarily Disable Magic Merge (Quick Start)**
+
+If you want to run the app without AI features:
+
+1. Edit `backend/main.py`
+2. Comment out line 39:
+   ```python
+   # from magic_merge.routes import router as magic_merge_router
+   ```
+3. Comment out line 288:
+   ```python
+   # app.include_router(magic_merge_router)
+   ```
+4. Restart the backend
+
+This allows you to use all features except Magic Merge. You can enable it later by installing AI dependencies and uncommenting those lines.
 
 ### Database errors
 ```bash
