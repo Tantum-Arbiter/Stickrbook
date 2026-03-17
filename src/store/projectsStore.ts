@@ -196,7 +196,8 @@ export const useProjectsStore = create<ProjectState>((set, get) => ({
     try {
       const response = await booksApi.create({
         title,
-        preset_name: preset as unknown as string,
+        description: '',
+        preset_name: preset.name,
         project_id: projectId
       });
       const book = transformBook(response.book as unknown as Record<string, unknown>);
