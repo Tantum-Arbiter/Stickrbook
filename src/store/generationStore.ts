@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { generationApi, ApiClientError, jobEventManager } from '../api';
 import type {
   GenerationState,
@@ -19,7 +20,9 @@ import { useProjectsStore } from './projectsStore';
 const DEFAULT_WIDTH = 1080;
 const DEFAULT_HEIGHT = 704;
 
-export const useGenerationStore = create<GenerationState>((set, get) => ({
+export const useGenerationStore = create<GenerationState>()(
+  persist(
+    (set, get) => ({
   // Generation mode
   mode: 'scene',
   workflowType: 'full_page',
@@ -556,5 +559,48 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     set({ currentPreset: preset });
     return preset;
   },
-}));
+    }),
+    {
+      name: 'stickrbook-generation',
+      // Persist active jobs, variations, and generation params
+      partialize: (state) => ({
+        // Generation params
+        mode: state.mode,
+        workflowType: state.workflowType,
+        prompt: state.prompt,
+        negativePrompt: state.negativePrompt,
+        seed: state.seed,
+        steps: state.steps,
+        cfgScale: state.cfgScale,
+        width: state.width,
+        height: state.height,
+        variationCount: state.variationCount,
+        characterId: state.characterId,
+        ipadapterWeight: state.ipadapterWeight,
+        // Active state
+        variations: state.variations,
+        activeJobs: state.activeJobs,
+        jobHistory: state.jobHistory,
+        currentPreset: state.currentPreset,
+        // Don't persist UI state
+        // isGenerating: false, // Always start fresh
+        // selectedVariationId: null,
+        // compareMode: false,
+        // compareSelection: [],
+      }),
+      // Re-subscribe to active jobs on hydration
+      onRehydrateStorage: () => (state) => {
+        if (state?.activeJobs && state.activeJobs.length > 0) {
+          console.log(`Rehydrated ${state.activeJobs.length} active jobs, re-subscribing...`);
+          // Re-subscribe to all active jobs
+          state.activeJobs.forEach((job) => {
+            if (job.status === 'pending' || job.status === 'generating') {
+              state.subscribeToJob(job.id);
+            }
+          });
+        }
+      },
+    }
+  )
+);
 
