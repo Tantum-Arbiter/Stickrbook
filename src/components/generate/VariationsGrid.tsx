@@ -10,7 +10,7 @@ import { useGenerationStore, useUIStore, useProjectsStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
 import { useToast } from '../ui/Toast';
-import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
+import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
 import { generationApi } from '../../api/endpoints';
 
@@ -39,6 +39,7 @@ export function VariationsGrid({
     toggleCompareMode,
     toggleCompareSelection,
     clearCompareSelection,
+    clearVariations,
   } = useGenerationStore();
   const toast = useToast();
 
@@ -199,8 +200,8 @@ export function VariationsGrid({
 
   return (
     <>
-      {/* Compare Mode Controls */}
-      {variations.length > 1 && (
+      {/* Compare Mode Controls & Clear Button */}
+      {variations.length > 0 && (
         <div style={{
           display: 'flex',
           gap: '8px',
@@ -210,14 +211,16 @@ export function VariationsGrid({
           background: 'var(--bg-card)',
           borderRadius: 'var(--radius-sm)',
         }}>
-          <Button
-            size="small"
-            variant={compareMode ? 'primary' : 'secondary'}
-            onClick={toggleCompareMode}
-          >
-            <GitCompare size={16} />
-            {compareMode ? 'Exit Compare' : 'Compare Mode'}
-          </Button>
+          {variations.length > 1 && (
+            <Button
+              size="small"
+              variant={compareMode ? 'primary' : 'secondary'}
+              onClick={toggleCompareMode}
+            >
+              <GitCompare size={16} />
+              {compareMode ? 'Exit Compare' : 'Compare Mode'}
+            </Button>
+          )}
           {compareMode && (
             <>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -234,6 +237,21 @@ export function VariationsGrid({
               )}
             </>
           )}
+          <div style={{ marginLeft: 'auto' }}>
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={() => {
+                if (window.confirm('Clear all generated variations? (Saved assets will not be affected)')) {
+                  clearVariations();
+                }
+              }}
+              title="Clear all generated variations"
+            >
+              <Trash2 size={16} />
+              Clear All
+            </Button>
+          </div>
         </div>
       )}
 

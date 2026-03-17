@@ -42,15 +42,21 @@ export function AssetLibrary({
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+  const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
 
   const currentBook = useProjectsStore((s) => s.currentBook());
   const assets = currentBook?.assets || [];
 
-  // Filter assets by type, search, and tags
+  // Filter assets by type, search, tags, and collection
   const filteredAssets = useMemo(() => {
     return assets.filter((asset) => {
       // Type filter
       if (activeTab !== 'all' && asset.assetType !== activeTab) {
+        return false;
+      }
+      // Collection filter
+      if (selectedCollection && asset.collection !== selectedCollection) {
         return false;
       }
       // Search filter
@@ -58,7 +64,8 @@ export function AssetLibrary({
         const query = searchQuery.toLowerCase();
         const nameMatch = asset.name.toLowerCase().includes(query);
         const descMatch = asset.description?.toLowerCase().includes(query);
-        if (!nameMatch && !descMatch) return false;
+        const collectionMatch = asset.collection?.toLowerCase().includes(query);
+        if (!nameMatch && !descMatch && !collectionMatch) return false;
       }
       // Tags filter
       if (selectedTags.length > 0 && asset.tags) {
@@ -67,7 +74,7 @@ export function AssetLibrary({
       }
       return true;
     });
-  }, [assets, activeTab, searchQuery, selectedTags]);
+  }, [assets, activeTab, searchQuery, selectedTags, selectedCollection]);
 
   // Get unique tags from all assets
   const allTags = useMemo(() => {
@@ -77,6 +84,33 @@ export function AssetLibrary({
     });
     return Array.from(tags).sort();
   }, [assets]);
+
+  // Get unique collections from filtered assets (by type)
+  const allCollections = useMemo(() => {
+    const collections = new Set<string>();
+    assets.forEach((asset) => {
+      // Only include collections from the active tab
+      if (activeTab === 'all' || asset.assetType === activeTab) {
+        if (asset.collection) {
+          collections.add(asset.collection);
+        }
+      }
+    });
+    return Array.from(collections).sort();
+  }, [assets, activeTab]);
+
+  // Group assets by collection
+  const assetsByCollection = useMemo(() => {
+    const grouped: Record<string, typeof filteredAssets> = {};
+    filteredAssets.forEach((asset) => {
+      const collection = asset.collection || 'Uncategorized';
+      if (!grouped[collection]) {
+        grouped[collection] = [];
+      }
+      grouped[collection].push(asset);
+    });
+    return grouped;
+  }, [filteredAssets]);
 
   // Count assets by type
   const typeCounts = useMemo(() => {
@@ -91,6 +125,18 @@ export function AssetLibrary({
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
+  }, []);
+
+  const toggleCollection = useCallback((collection: string) => {
+    setCollapsedCollections((prev) => {
+      const next = new Set(prev);
+      if (next.has(collection)) {
+        next.delete(collection);
+      } else {
+        next.add(collection);
+      }
+      return next;
+    });
   }, []);
 
   return (
@@ -131,6 +177,34 @@ export function AssetLibrary({
             />
           </div>
 
+          {/* Collections Filter */}
+          {allCollections.length > 0 && (
+            <div className="asset-collections-filter" style={{ marginTop: '8px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px', color: 'var(--text-muted)' }}>
+                Collections:
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <span
+                  className={`asset-tag ${selectedCollection === null ? 'active' : ''}`}
+                  onClick={() => setSelectedCollection(null)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  All
+                </span>
+                {allCollections.map((collection) => (
+                  <span
+                    key={collection}
+                    className={`asset-tag ${selectedCollection === collection ? 'active' : ''}`}
+                    onClick={() => setSelectedCollection(collection)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {collection}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tags Filter */}
           {allTags.length > 0 && (
             <div className="asset-tags-filter">
@@ -148,18 +222,53 @@ export function AssetLibrary({
         </div>
       </div>
 
-      {/* Asset Grid */}
+      {/* Asset Grid - Grouped by Collection */}
       <div className="sidebar-asset-grid">
-        {filteredAssets.map((asset) => (
-          <AssetThumbnail
-            key={asset.id}
-            asset={asset}
-            onClick={() => onAssetClick?.(asset)}
-            onDragStart={(e) => onAssetDragStart?.(asset, e)}
-          />
-        ))}
+        {Object.keys(assetsByCollection).length > 0 ? (
+          Object.entries(assetsByCollection).map(([collection, collectionAssets]) => {
+            const isCollapsed = collapsedCollections.has(collection);
+            return (
+              <div key={collection} style={{ marginBottom: '16px' }}>
+                {/* Collection Header */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px',
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    marginBottom: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                  onClick={() => toggleCollection(collection)}
+                >
+                  {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                  <span>{collection}</span>
+                  <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    {collectionAssets.length}
+                  </span>
+                </div>
 
-        {filteredAssets.length === 0 && (
+                {/* Collection Assets */}
+                {!isCollapsed && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                    {collectionAssets.map((asset) => (
+                      <AssetThumbnail
+                        key={asset.id}
+                        asset={asset}
+                        onClick={() => onAssetClick?.(asset)}
+                        onDragStart={(e) => onAssetDragStart?.(asset, e)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
           <div className="asset-empty">
             <p>No assets found</p>
           </div>

@@ -81,6 +81,7 @@ export interface Asset {
   name: string;
   description?: string;
   assetType: AssetType;
+  collection?: string; // Collection name for grouping assets (e.g., "Hero Poses", "Forest Scenes")
   imagePath: string;
   thumbnailPath?: string;
   hasTransparency: boolean;
@@ -377,7 +378,7 @@ export interface GenerationState {
   generateMultiView: (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>, batchName?: string) => Promise<void>;
   selectVariation: (id: string) => void;
   clearVariations: () => void;
-  saveVariation: (id: string) => Promise<Asset>;
+  saveVariation: (id: string, collectionName?: string) => Promise<Asset>;
 
   // Job actions (SSE-based with polling fallback)
   subscribeToJob: (jobId: string) => void;

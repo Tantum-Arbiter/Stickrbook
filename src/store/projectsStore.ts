@@ -85,6 +85,7 @@ const transformAsset = (a: Record<string, unknown>): Asset => ({
   name: a.name as string,
   description: a.description as string | undefined,
   assetType: a.asset_type as Asset['assetType'],
+  collection: a.collection as string | undefined,
   imagePath: a.image_path as string,
   thumbnailPath: a.thumbnail_path as string | undefined,
   hasTransparency: (a.has_transparency as boolean) || false,

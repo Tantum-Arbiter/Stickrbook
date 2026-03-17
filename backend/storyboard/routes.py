@@ -707,6 +707,7 @@ async def select_variation(
     job_id: str,
     asset_type: AssetType = Query(default=AssetType.BACKGROUND),
     name: Optional[str] = Query(default=None),
+    collection: Optional[str] = Query(default=None),
     repos: Repositories = Depends(get_repos)
 ):
     """Select a variation and save it as an asset"""
@@ -718,6 +719,7 @@ async def select_variation(
     logger.info(f"  Job ID: {job_id}")
     logger.info(f"  Asset Type: {asset_type.value}")
     logger.info(f"  Name: {name}")
+    logger.info(f"  Collection: {collection}")
 
     book = await repos.books.get_by_id(book_id)
     if not book:
@@ -805,9 +807,11 @@ async def select_variation(
         db_asset = db_models.Asset(
             id=saved_pydantic.id,
             book_id=book_id,
-            type=asset_type.value,
+            asset_type=asset_type.value,
             name=asset_name,
+            collection=collection,  # Add collection for grouping
             image_path=saved_pydantic.filename,
+            has_transparency=(asset_type in [AssetType.CHARACTER, AssetType.PROP]),
             prompt=job.inputs.prompt if job.inputs else "",
             seed=job.inputs.seed if job.inputs else 0
         )

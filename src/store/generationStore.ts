@@ -306,7 +306,7 @@ export const useGenerationStore = create<GenerationState>()(
     set({ jobHistory: [] });
   },
 
-  saveVariation: async (id: string) => {
+  saveVariation: async (id: string, collectionName?: string) => {
     const variation = get().variations.find((v) => v.id === id);
     if (!variation) throw new Error('Variation not found');
 
@@ -317,12 +317,33 @@ export const useGenerationStore = create<GenerationState>()(
     const mode = get().mode;
     const assetType = mode === 'scene' ? 'background' : mode === 'character' ? 'character' : 'prop';
 
+    // Prompt for collection name if not provided
+    // Use batch name as default suggestion
+    let collection = collectionName;
+    if (!collection) {
+      const defaultCollection = variation.batchName || '';
+      const promptText = mode === 'scene'
+        ? 'Enter collection name for this scene (e.g., "Forest Scenes", "Beach Backgrounds"):'
+        : mode === 'character'
+        ? 'Enter collection name for this character (e.g., "Hero Poses", "Villain Angles"):'
+        : 'Enter collection name for this object (e.g., "Magic Items", "Weapons"):';
+
+      collection = window.prompt(promptText, defaultCollection) || undefined;
+    }
+
     // For character/object types, the backend already removed the background during generation
     // Just save normally and mark as transparent
     if (mode === 'character' || mode === 'object') {
       try {
+        const params = new URLSearchParams({
+          asset_type: assetType,
+        });
+        if (collection) {
+          params.append('collection', collection);
+        }
+
         const response = await fetch(
-          `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?asset_type=${assetType}`,
+          `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`,
           { method: 'POST' }
         );
 
@@ -338,7 +359,8 @@ export const useGenerationStore = create<GenerationState>()(
         const asset: Asset = {
           id: backendAsset.id,
           name: backendAsset.name,
-          assetType: backendAsset.type || assetType,
+          assetType: backendAsset.asset_type || assetType,
+          collection: backendAsset.collection,
           imagePath: backendAsset.image_path,
           thumbnailPath: backendAsset.image_path,
           hasTransparency: true, // Backend already removed background during generation
@@ -356,20 +378,45 @@ export const useGenerationStore = create<GenerationState>()(
     }
 
     // Regular save for scenes or if transparency save failed
-    const asset: Asset = {
-      id: variation.id,
-      name: `Variation ${variation.seed}`,
-      assetType,
-      imagePath: variation.imagePath,
-      thumbnailPath: variation.thumbnailPath,
-      hasTransparency: false,
-      tags: [],
-      createdAt: new Date().toISOString(),
-    };
+    const params = new URLSearchParams({
+      asset_type: assetType,
+    });
+    if (collection) {
+      params.append('collection', collection);
+    }
 
-    // Add to projects store
-    await useProjectsStore.getState().addAsset(currentBook.id, asset);
-    return asset;
+    try {
+      const response = await fetch(
+        `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?${params}`,
+        { method: 'POST' }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to save asset: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const backendAsset = result.asset;
+
+      const asset: Asset = {
+        id: backendAsset.id,
+        name: backendAsset.name,
+        assetType: backendAsset.asset_type || assetType,
+        collection: backendAsset.collection,
+        imagePath: backendAsset.image_path,
+        thumbnailPath: backendAsset.image_path,
+        hasTransparency: false,
+        tags: backendAsset.tags || [],
+        createdAt: new Date().toISOString(),
+      };
+
+      // Add to projects store
+      await useProjectsStore.getState().addAsset(currentBook.id, asset);
+      return asset;
+    } catch (error) {
+      console.error('Failed to save asset:', error);
+      throw error;
+    }
   },
 
   // SSE-based job subscription (replaces polling)

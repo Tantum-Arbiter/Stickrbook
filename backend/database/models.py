@@ -163,6 +163,7 @@ class Asset(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     asset_type: Mapped[str] = mapped_column(String(50), nullable=False)  # character, prop, background, variation, final
+    collection: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # Collection name for grouping (e.g., "Hero Poses", "Forest Scenes")
     image_path: Mapped[str] = mapped_column(String(512), nullable=False)
     thumbnail_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     has_transparency: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -185,6 +186,7 @@ class Asset(Base):
     __table_args__ = (
         Index("ix_assets_book_id", "book_id"),
         Index("ix_assets_asset_type", "asset_type"),
+        Index("ix_assets_collection", "collection"),
     )
 
 
