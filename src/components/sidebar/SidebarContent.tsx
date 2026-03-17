@@ -9,10 +9,10 @@ import { useCallback, useRef, useState } from 'react';
 import { ProjectTree } from './ProjectTree';
 import { AssetLibrary } from './AssetLibrary';
 import { SidebarSection } from '../layout';
-import { useProjectsStore, useEditorStore, useToast } from '../../store';
+import { useProjectsStore, useEditorStore, useToast, useUIStore } from '../../store';
 import { Button } from '../ui/Button';
 import type { Asset, Book } from '../../store/types';
-import { FolderOpen, Image, Download, Upload, Loader2 } from 'lucide-react';
+import { FolderOpen, Image, Download, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import {
   exportProjectBundle,
   importProjectBundle,
@@ -28,7 +28,21 @@ export interface SidebarContentProps {
 export function SidebarContent({ className = '', activeTab = 'generate' }: SidebarContentProps) {
   const createProject = useProjectsStore((s) => s.createProject);
   const addLayer = useEditorStore((s) => s.addLayer);
+  const sidebarZoom = useUIStore((s) => s.sidebarZoom);
+  const setSidebarZoom = useUIStore((s) => s.setSidebarZoom);
   const toast = useToast();
+
+  const handleZoomIn = useCallback(() => {
+    setSidebarZoom(Math.min(2.0, sidebarZoom + 0.1));
+  }, [sidebarZoom, setSidebarZoom]);
+
+  const handleZoomOut = useCallback(() => {
+    setSidebarZoom(Math.max(0.5, sidebarZoom - 0.1));
+  }, [sidebarZoom, setSidebarZoom]);
+
+  const handleZoomReset = useCallback(() => {
+    setSidebarZoom(1.0);
+  }, [setSidebarZoom]);
 
   const handleNewProject = useCallback(async () => {
     try {
@@ -81,31 +95,71 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
 
   return (
     <div className={`sidebar-content ${className}`}>
-      {/* Projects Section */}
-      <SidebarSection
-        id="projects"
-        title="Projects"
-        icon={<FolderOpen size={14} />}
-      >
-        <div className="sidebar-section-actions">
-          <Button size="small" variant="ghost" onClick={handleNewProject}>
-            + New
-          </Button>
-        </div>
-        <ProjectTree onBookSelect={handleBookSelect} />
-      </SidebarSection>
+      {/* Zoom Controls */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 12px',
+        background: 'var(--bg-dark)',
+        borderBottom: '1px solid var(--border)',
+      }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: 1 }}>
+          Zoom: {Math.round(sidebarZoom * 100)}%
+        </span>
+        <Button size="small" variant="ghost" onClick={handleZoomOut} title="Zoom Out">
+          <ZoomOut size={12} />
+        </Button>
+        <Button size="small" variant="ghost" onClick={handleZoomReset} title="Reset Zoom">
+          <RotateCcw size={12} />
+        </Button>
+        <Button size="small" variant="ghost" onClick={handleZoomIn} title="Zoom In">
+          <ZoomIn size={12} />
+        </Button>
+      </div>
 
-      {/* Assets Section (only when a book is selected) */}
-      <SidebarSection
-        id="assets"
-        title="Assets"
-        icon={<Image size={14} />}
-      >
-        <AssetLibrary
-          onAssetClick={handleAssetClick}
-          onAssetDragStart={handleAssetDragStart}
-        />
-      </SidebarSection>
+      {/* Scaled Content Container */}
+      <div style={{
+        flex: 1,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        <div style={{
+          flex: 1,
+          overflow: 'auto',
+          transform: `scale(${sidebarZoom})`,
+          transformOrigin: 'top left',
+          width: `${100 / sidebarZoom}%`,
+          height: `${100 / sidebarZoom}%`,
+        }}>
+          {/* Projects Section */}
+          <SidebarSection
+            id="projects"
+            title="Projects"
+            icon={<FolderOpen size={14} />}
+          >
+            <div className="sidebar-section-actions">
+              <Button size="small" variant="ghost" onClick={handleNewProject}>
+                + New
+              </Button>
+            </div>
+            <ProjectTree onBookSelect={handleBookSelect} />
+          </SidebarSection>
+
+          {/* Assets Section (only when a book is selected) */}
+          <SidebarSection
+            id="assets"
+            title="Assets"
+            icon={<Image size={14} />}
+          >
+            <AssetLibrary
+              onAssetClick={handleAssetClick}
+              onAssetDragStart={handleAssetDragStart}
+            />
+          </SidebarSection>
+        </div>
+      </div>
     </div>
   );
 }

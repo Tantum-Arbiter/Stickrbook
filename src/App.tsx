@@ -7,7 +7,7 @@ import {
 } from './components/layout';
 import { Button, Tabs, Tab } from './components/ui';
 import { ToastProvider } from './components/ui/Toast';
-import { Palette, FolderOpen } from 'lucide-react';
+import { Palette, Compass } from 'lucide-react';
 
 // Domain components
 import { GeneratePanel, JobStatusIcon } from './components/generate';
@@ -64,8 +64,8 @@ function App() {
           ),
         }}
         leftSidebar={{
-          title: 'Projects',
-          icon: <FolderOpen size={16} />,
+          title: 'Browse',
+          icon: <Compass size={16} />,
           initialWidth: 280,
           children: <SidebarContent activeTab={activeTab} />,
         }}

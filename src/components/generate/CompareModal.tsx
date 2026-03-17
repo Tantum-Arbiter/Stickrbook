@@ -21,7 +21,7 @@ export function CompareModal({ variations, onClose }: CompareModalProps) {
   const gridRows = variations.length <= 2 ? 1 : 2;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay open" onClick={onClose}>
       <div 
         className="modal-content compare-modal" 
         onClick={(e) => e.stopPropagation()}

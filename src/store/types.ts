@@ -380,6 +380,7 @@ export interface UIState {
   leftSidebarCollapsed: boolean;
   rightSidebarWidth: number;
   rightSidebarCollapsed: boolean;
+  sidebarZoom: number; // Zoom level for sidebar content (0.5 to 2.0)
 
   // Tab state
   activeTab: 'generate' | 'edit' | 'story';
@@ -403,6 +404,7 @@ export interface UIState {
   toggleLeftSidebar: () => void;
   setRightSidebarWidth: (width: number) => void;
   toggleRightSidebar: () => void;
+  setSidebarZoom: (zoom: number) => void;
 
   setActiveTab: (tab: UIState['activeTab']) => void;
 

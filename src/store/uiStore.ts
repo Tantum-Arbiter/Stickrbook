@@ -21,6 +21,7 @@ export const useUIStore = create<UIState>()(
       leftSidebarCollapsed: false,
       rightSidebarWidth: DEFAULT_RIGHT_SIDEBAR_WIDTH,
       rightSidebarCollapsed: true,
+      sidebarZoom: 1.0, // Default zoom level
 
       // Tab state
       activeTab: 'generate',
@@ -54,6 +55,10 @@ export const useUIStore = create<UIState>()(
 
       toggleRightSidebar: () => {
         set((state) => ({ rightSidebarCollapsed: !state.rightSidebarCollapsed }));
+      },
+
+      setSidebarZoom: (zoom: number) => {
+        set({ sidebarZoom: Math.max(0.5, Math.min(2.0, zoom)) });
       },
 
       // Tab actions
