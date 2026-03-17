@@ -36,7 +36,7 @@ export const useGenerationStore = create<GenerationState>()(
   cfgScale: 5.5,
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
-  variationCount: 4, // Number of variations to generate
+  variationCount: 2, // Number of variations to generate per angle/pose (default: 2)
 
   // Character reference
   characterId: null,
@@ -333,13 +333,39 @@ export const useGenerationStore = create<GenerationState>()(
     let collection = collectionName;
     if (!collection) {
       const defaultCollection = variation.batchName || '';
+
+      // Get existing collections for this asset type
+      const existingCollections = currentBook.assets
+        .filter(a => a.assetType === assetType && a.collection)
+        .map(a => a.collection!)
+        .filter((v, i, arr) => arr.indexOf(v) === i) // unique
+        .sort();
+
       const promptText = mode === 'scene'
         ? 'Enter collection name for this scene (e.g., "Forest Scenes", "Beach Backgrounds"):'
         : mode === 'character'
         ? 'Enter collection name for this character (e.g., "Hero Poses", "Villain Angles"):'
         : 'Enter collection name for this object (e.g., "Magic Items", "Weapons"):';
 
-      collection = window.prompt(promptText, defaultCollection) || undefined;
+      let collectionOptions = '';
+      if (existingCollections.length > 0) {
+        collectionOptions = `\n\nExisting collections:\n${existingCollections.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\nEnter a number to select, or type a new name:`;
+      }
+
+      const userInput = window.prompt(promptText + collectionOptions, defaultCollection);
+
+      if (!userInput) {
+        collection = undefined;
+      } else {
+        // Check if user entered a number to select existing collection
+        const selectedIndex = parseInt(userInput) - 1;
+        if (!isNaN(selectedIndex) && selectedIndex >= 0 && selectedIndex < existingCollections.length) {
+          collection = existingCollections[selectedIndex];
+        } else {
+          collection = userInput;
+        }
+      }
+
       console.log('📝 Collection name from prompt:', collection);
     }
 

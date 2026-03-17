@@ -10,7 +10,7 @@ import { useGenerationStore, useUIStore, useProjectsStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
 import { useToast } from '../ui/Toast';
-import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw, ChevronDown, ChevronRight, Trash2, Save } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
 import { generationApi } from '../../api/endpoints';
 
@@ -323,31 +323,86 @@ export function VariationsGrid({
                   label = 'Generating...';
                 }
 
+                // Check if all jobs in this row are complete
+                const allJobsComplete = groupSlots.every(slot => slot.variation !== undefined);
+                const hasAnyVariations = groupSlots.some(slot => slot.variation !== undefined);
+                const rowVariations = groupSlots.filter(slot => slot.variation).map(slot => slot.variation!);
+
                 return (
                   <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div
-                      onClick={() => toggleBatchCollapse(key)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        cursor: 'pointer',
                         padding: '4px',
                         borderRadius: '4px',
-                        transition: 'background-color 0.2s',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
-                      <h3 style={{
-                        fontSize: 'calc(var(--font-size-md) * 1.1)',
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        margin: 0,
-                      }}>
-                        {label} ({groupSlots.length})
-                      </h3>
+                      <div
+                        onClick={() => toggleBatchCollapse(key)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          flex: 1,
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                        <h3 style={{
+                          fontSize: 'calc(var(--font-size-md) * 1.1)',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          margin: 0,
+                        }}>
+                          {label} ({groupSlots.length})
+                        </h3>
+                      </div>
+
+                      {/* Save Collection Button - only show when all jobs complete */}
+                      {allJobsComplete && hasAnyVariations && (
+                        <Button
+                          size="small"
+                          variant="primary"
+                          onClick={async () => {
+                            const collectionName = window.prompt(
+                              'Enter a collection name for these variations:',
+                              batchName || label
+                            );
+                            if (!collectionName) return;
+
+                            try {
+                              // Save all variations in this row with the same collection name
+                              await Promise.all(
+                                rowVariations.map(v => saveVariation(v.id, collectionName))
+                              );
+                              toast.success(`Saved ${rowVariations.length} assets to collection "${collectionName}"`);
+                            } catch (error) {
+                              console.error('Failed to save collection:', error);
+                              toast.error('Failed to save collection');
+                            }
+                          }}
+                          title="Save all variations in this row as a collection"
+                        >
+                          <Save size={14} />
+                          Save Collection
+                        </Button>
+                      )}
+
+                      {/* Show status if jobs are still running */}
+                      {!allJobsComplete && hasAnyVariations && (
+                        <span style={{
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
+                          fontStyle: 'italic'
+                        }}>
+                          {rowVariations.length}/{groupSlots.length} complete
+                        </span>
+                      )}
                     </div>
                     {!isCollapsed && (
                       <div

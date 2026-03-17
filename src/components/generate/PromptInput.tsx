@@ -552,7 +552,11 @@ export function PromptInput({ className = '' }: PromptInputProps) {
 
       {/* Variation Count Selector */}
       <div className="form-group">
-        <label htmlFor="variation-count">Number of Variations</label>
+        <label htmlFor="variation-count">
+          {mode === 'character' || mode === 'object'
+            ? 'Variations per Angle/Pose'
+            : 'Number of Variations'}
+        </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <input
             id="variation-count"
@@ -576,7 +580,14 @@ export function PromptInput({ className = '' }: PromptInputProps) {
           />
         </div>
         <span className="input-helper">
-          Generate {variationCount} variation{variationCount !== 1 ? 's' : ''} (jobs will run sequentially)
+          {mode === 'character' || mode === 'object' ? (
+            <>
+              Generate {variationCount} variation{variationCount !== 1 ? 's' : ''} for each selected {mode === 'character' ? 'pose/angle' : 'angle'}
+              {' '}({(mode === 'character' ? selectedPoses.length * selectedViewAngles.length : selectedObjectAngles.length) * variationCount} total images)
+            </>
+          ) : (
+            <>Generate {variationCount} variation{variationCount !== 1 ? 's' : ''} (jobs will run sequentially)</>
+          )}
         </span>
       </div>
 
@@ -686,39 +697,75 @@ export function PromptInput({ className = '' }: PromptInputProps) {
             </Button>
           </div>
 
-          {/* Pose Selection Grid - What the character is DOING */}
-          <div className="pose-selection-section">
-            <label className="pose-grid-label">Select Poses (What they're doing)</label>
-            <div className="pose-grid">
-              {CHARACTER_POSES.map((pose) => (
-                <div
-                  key={pose.value}
-                  className={`pose-option ${selectedPoses.includes(pose.value) ? 'selected' : ''}`}
-                  onClick={() => togglePose(pose.value)}
-                >
-                  <div className="pose-icon"><pose.Icon size={16} /></div>
-                  <span>{pose.label}</span>
-                </div>
-              ))}
+          {/* Pose & Angle Selection - Grouped for clarity */}
+          <div style={{
+            border: '2px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '16px',
+            backgroundColor: 'var(--bg-tertiary)',
+            marginTop: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              paddingBottom: '8px',
+              borderBottom: '1px solid var(--border-color)'
+            }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Pose & Angle Combinations
+              </h4>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--accent-color)',
+                backgroundColor: 'var(--accent-bg)',
+                padding: '4px 8px',
+                borderRadius: '4px'
+              }}>
+                {selectedPoses.length} × {selectedViewAngles.length} = {selectedPoses.length * selectedViewAngles.length} rows
+              </span>
             </div>
-          </div>
 
-          {/* View Angle Selection Grid - How we SEE the character */}
-          <div className="angle-selection-section">
-            <label className="pose-grid-label">Select View Angles (How we see them)</label>
-            <div className="pose-grid">
-              {VIEW_ANGLES.map((angle) => (
-                <div
-                  key={angle.value}
-                  className={`pose-option ${selectedViewAngles.includes(angle.value) ? 'selected' : ''}`}
-                  onClick={() => toggleViewAngle(angle.value)}
-                >
-                  <div className="pose-icon"><angle.Icon size={16} /></div>
-                  <span>{angle.label}</span>
-                </div>
-              ))}
+            {/* Pose Selection Grid - What the character is DOING */}
+            <div className="pose-selection-section">
+              <label className="pose-grid-label">Select Poses (What they're doing)</label>
+              <div className="pose-grid">
+                {CHARACTER_POSES.map((pose) => (
+                  <div
+                    key={pose.value}
+                    className={`pose-option ${selectedPoses.includes(pose.value) ? 'selected' : ''}`}
+                    onClick={() => togglePose(pose.value)}
+                  >
+                    <div className="pose-icon"><pose.Icon size={16} /></div>
+                    <span>{pose.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="pose-hint">Select pose + view angle combinations. Each combination generates separately with transparent background.</p>
+
+            {/* View Angle Selection Grid - How we SEE the character */}
+            <div className="angle-selection-section" style={{ marginTop: '12px' }}>
+              <label className="pose-grid-label">Select View Angles (How we see them)</label>
+              <div className="pose-grid">
+                {VIEW_ANGLES.map((angle) => (
+                  <div
+                    key={angle.value}
+                    className={`pose-option ${selectedViewAngles.includes(angle.value) ? 'selected' : ''}`}
+                    onClick={() => toggleViewAngle(angle.value)}
+                  >
+                    <div className="pose-icon"><angle.Icon size={16} /></div>
+                    <span>{angle.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="pose-hint" style={{ marginTop: '12px', marginBottom: 0 }}>
+              Each pose + angle combination creates a separate row with {variationCount} variation{variationCount !== 1 ? 's' : ''} each.
+              Total: <strong>{selectedPoses.length * selectedViewAngles.length * variationCount} images</strong>
+            </p>
           </div>
         </div>
       )}
@@ -751,22 +798,57 @@ export function PromptInput({ className = '' }: PromptInputProps) {
             </Button>
           </div>
 
-          {/* Object Angle Selection Grid */}
-          <div className="angle-selection-section">
-            <label className="pose-grid-label">Select View Angles</label>
-            <div className="pose-grid">
-              {OBJECT_ANGLES.map((angle) => (
-                <div
-                  key={angle.value}
-                  className={`pose-option ${selectedObjectAngles.includes(angle.value) ? 'selected' : ''}`}
-                  onClick={() => toggleObjectAngle(angle.value)}
-                >
-                  <div className="pose-icon"><angle.Icon size={16} /></div>
-                  <span>{angle.label}</span>
-                </div>
-              ))}
+          {/* Object Angle Selection - Grouped for clarity */}
+          <div style={{
+            border: '2px solid var(--border-color)',
+            borderRadius: '8px',
+            padding: '16px',
+            backgroundColor: 'var(--bg-tertiary)',
+            marginTop: '12px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              paddingBottom: '8px',
+              borderBottom: '1px solid var(--border-color)'
+            }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Object View Angles
+              </h4>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--accent-color)',
+                backgroundColor: 'var(--accent-bg)',
+                padding: '4px 8px',
+                borderRadius: '4px'
+              }}>
+                {selectedObjectAngles.length} angle{selectedObjectAngles.length !== 1 ? 's' : ''} selected
+              </span>
             </div>
-            <p className="pose-hint">Click angles to select/deselect. Each generates with transparent background.</p>
+
+            <div className="angle-selection-section">
+              <label className="pose-grid-label">Select View Angles</label>
+              <div className="pose-grid">
+                {OBJECT_ANGLES.map((angle) => (
+                  <div
+                    key={angle.value}
+                    className={`pose-option ${selectedObjectAngles.includes(angle.value) ? 'selected' : ''}`}
+                    onClick={() => toggleObjectAngle(angle.value)}
+                  >
+                    <div className="pose-icon"><angle.Icon size={16} /></div>
+                    <span>{angle.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="pose-hint" style={{ marginTop: '12px', marginBottom: 0 }}>
+              Each angle creates a separate row with {variationCount} variation{variationCount !== 1 ? 's' : ''} each.
+              Total: <strong>{selectedObjectAngles.length * variationCount} images</strong>
+            </p>
           </div>
         </div>
       )}
