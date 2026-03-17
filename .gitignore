@@ -105,8 +105,9 @@ backend/env/
 .dmypy.json
 dmypy.json
 
-# Backend outputs
-backend/outputs/
+# Backend outputs (but keep the directory structure)
+backend/outputs/*
+!backend/outputs/.gitkeep
 backend/storyboard.db
 backend/*.db
 backend/*.sqlite
