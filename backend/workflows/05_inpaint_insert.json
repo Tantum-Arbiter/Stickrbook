@@ -1,0 +1,77 @@
+{
+  "_workflow": "INPAINT - Insert Element into Masked Area",
+  "_description": "Insert a character or prop into a specific masked region of an existing scene. This is the PRIMARY composition method for SD 3.5 Medium.",
+  "_placeholders": ["{{STYLE}}", "{{SUBJECT}}", "{{PLACEMENT}}"],
+  "_requires": ["Base scene image", "Mask image (white = area to fill)"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "Denoise 0.8-0.9 for new content, grow_mask 6-10 for seamless blending",
+  "_note": "Use this instead of IP-Adapter for SD 3.5 Medium composition",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.85,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["12", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Insert subject into children's storybook scene.\n\nSTYLE:\n{{STYLE}}\n\nSUBJECT:\n{{SUBJECT}}\n\nPLACEMENT:\n{{PLACEMENT}}\n\nRULES:\n- Subject matches the existing scene style perfectly\n- Natural integration with surrounding area\n- Consistent lighting and perspective\n- Seamless blending at edges\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - INSERT"}
+  },
+  "6": {
+    "inputs": {
+      "text": "inconsistent style, wrong lighting, harsh edges, visible seam, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "inpainted_scene", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Inpainted"}
+  },
+  "10": {
+    "inputs": {"image": "{{BASE_IMAGE}}", "upload": "image"},
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Base Scene"}
+  },
+  "11": {
+    "inputs": {"image": "{{MASK_IMAGE}}", "upload": "image"},
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Mask (White=Fill)"}
+  },
+  "12": {
+    "inputs": {
+      "grow_mask_by": 8,
+      "pixels": ["10", 0],
+      "vae": ["3", 2],
+      "mask": ["11", 1]
+    },
+    "class_type": "VAEEncodeForInpaint",
+    "_meta": {"title": "Encode for Inpaint"}
+  }
+}
+

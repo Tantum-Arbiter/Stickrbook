@@ -1,0 +1,11 @@
+Alembic migrations for Storyboard Creator.
+
+To create a new migration:
+    alembic revision --autogenerate -m "description"
+
+To run migrations:
+    alembic upgrade head
+
+To rollback:
+    alembic downgrade -1
+

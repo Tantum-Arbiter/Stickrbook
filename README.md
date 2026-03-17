@@ -37,9 +37,29 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 #### Option 2: With Real Backend
 
-If you have the backend server running:
+**Step 1: Start the Backend**
 
 ```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment (first time only)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Start the backend server
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The backend will be available at http://localhost:8000
+
+**Step 2: Start the Frontend**
+
+```bash
+# In a new terminal, from the root directory
 # Edit .env file
 VITE_BACKEND_URL=http://localhost:8000
 VITE_USE_MOCKS=false
@@ -48,10 +68,12 @@ VITE_USE_MOCKS=false
 npm run dev
 ```
 
-**Note:** The backend server must be running separately. It should provide:
-- FastAPI endpoints at `/v1/storyboard/*`
-- ComfyUI integration for image generation
-- File storage for generated images
+**Backend Requirements:**
+- Python 3.11+
+- ComfyUI running at http://127.0.0.1:8188
+- (Optional) Ollama with LLaVA for image validation
+
+See [backend/README.md](backend/README.md) for detailed backend setup instructions.
 
 ## 🎨 Features
 
@@ -104,6 +126,7 @@ npm run e2e:ui           # Run E2E tests with UI
 
 ## 🛠️ Tech Stack
 
+### Frontend
 - **React** 18 + **TypeScript**
 - **Vite** - Fast build tool
 - **Zustand** - State management
@@ -111,19 +134,40 @@ npm run e2e:ui           # Run E2E tests with UI
 - **Playwright** - E2E testing
 - **MSW** - API mocking
 
+### Backend
+- **FastAPI** - Modern Python web framework
+- **ComfyUI** - Stable Diffusion workflow engine
+- **SQLAlchemy** - Database ORM
+- **Ollama Vision** - Image validation (optional)
+- **Pydantic** - Data validation
+
 ## 📁 Project Structure
 
 ```
-src/
-├── api/              # API client and endpoints
-├── components/       # React components
-│   ├── editor/      # Canvas editor components
-│   ├── generate/    # Image generation UI
-│   ├── sidebar/     # Project/asset management
-│   └── ui/          # Reusable UI components
-├── store/           # Zustand state management
-├── styles/          # CSS styles
-└── test/            # Test utilities and mocks
+stickrbook/
+├── src/                  # Frontend React application
+│   ├── api/             # API client and endpoints
+│   ├── components/      # React components
+│   │   ├── editor/     # Canvas editor components
+│   │   ├── generate/   # Image generation UI
+│   │   ├── sidebar/    # Project/asset management
+│   │   └── ui/         # Reusable UI components
+│   ├── store/          # Zustand state management
+│   ├── styles/         # CSS styles
+│   └── test/           # Test utilities and mocks
+│
+└── backend/             # Python FastAPI backend
+    ├── main.py         # FastAPI application
+    ├── comfyui_client.py  # ComfyUI integration
+    ├── workflow_builder.py # Workflow templates
+    ├── validator.py    # Image validation
+    ├── job_queue.py    # Async job queue
+    ├── models.py       # Pydantic models
+    ├── config.py       # Configuration
+    ├── database/       # SQLAlchemy models
+    ├── storyboard/     # Storyboard API routes
+    ├── workflows/      # ComfyUI workflow JSONs
+    └── outputs/        # Generated images
 ```
 
 ## 🔧 Configuration
@@ -140,16 +184,25 @@ VITE_BACKEND_URL=http://localhost:8000
 VITE_USE_MOCKS=false
 ```
 
-### Backend Requirements
+### Backend Configuration
 
-The backend server should implement these endpoints:
+The backend has its own configuration in `backend/.env`:
 
-- `POST /v1/storyboard/books/{bookId}/generate/variations` - Submit generation job
-- `GET /v1/jobs/{jobId}` - Get job status
-- `GET /v1/jobs/{jobId}/events` - SSE for real-time progress
-- `GET /v1/files/{fileId}` - Download generated images
-- `GET /v1/storyboard/projects` - List projects
-- `GET /v1/storyboard/books` - List books
+```env
+# Server settings
+HOST=0.0.0.0
+PORT=8000
+
+# ComfyUI settings
+COMFYUI_HOST=127.0.0.1
+COMFYUI_PORT=8188
+
+# Worker settings
+RENDER_WORKERS=1
+JOB_QUEUE_MAX=20
+```
+
+See [backend/README.md](backend/README.md) for complete backend documentation and API reference.
 
 ## 📄 License
 

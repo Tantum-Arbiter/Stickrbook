@@ -1,0 +1,65 @@
+{
+  "_workflow": "CHARACTER - Isolated Reference Sheet",
+  "_description": "Generates a single character on plain white background. Use SAME style as scene.",
+  "_placeholders": ["{{STYLE}}", "{{CHARACTER}}", "{{POSE}}"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "CFG 5.5-6.0, Steps 30-40, sgm_uniform scheduler",
+  "_limitation": "NO IP-Adapter for SD 3.5 Medium - use detailed prompts for consistency",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["7", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Character reference sheet for children's storybook.\n\nSTYLE:\n{{STYLE}}\n\nCHARACTER:\n{{CHARACTER}}\n\nPOSE:\n{{POSE}}\n\nBACKGROUND:\nPlain white background, solid neutral color, completely empty backdrop, no environment, no scene, no props, no floor details, no shadows on ground.\n\nRULES:\n- EXACTLY ONE character only\n- Character fully visible, not cropped\n- Plain white or light gray background ONLY\n- NO environment, NO scene, NO landscape\n- NO props, NO furniture, NO objects\n- Character isolated for easy extraction\n- Consistent with the specified art style\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - CHARACTER ISOLATED"}
+  },
+  "6": {
+    "inputs": {
+      "text": "background, environment, scene, landscape, forest, sky, grass, floor, ground, setting, props, furniture, trees, buildings, nature, outdoor, indoor, room, multiple characters, crowd, group, two heads, multiple heads, extra limbs, deformed, cropped, cut off, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative - Block Environment"}
+  },
+  "7": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {"title": "Portrait Size"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "character_isolated", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Character"}
+  }
+}
+

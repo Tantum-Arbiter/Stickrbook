@@ -1,0 +1,67 @@
+{
+  "_workflow": "COMPOSE - Blend Character with Scene (Img2Img)",
+  "_description": "Compose character into scene using high-denoise Img2Img. SD 3.5 Medium compatible alternative to IP-Adapter.",
+  "_placeholders": ["{{STYLE}}", "{{CHARACTER}}", "{{ACTION}}", "{{SETTING}}"],
+  "_requires": ["Composite image (character roughly placed on scene)"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "1. Manually place character PNG on scene in image editor. 2. Use denoise 0.5-0.7 to blend while preserving composition.",
+  "_note": "IP-Adapter not available for SD 3.5 Medium. Use this Img2Img approach instead.",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.55,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["10", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Children's storybook illustration with character naturally integrated in scene.\n\nSTYLE:\n{{STYLE}}\n\nCHARACTER:\n{{CHARACTER}}\n\nACTION:\n{{ACTION}}\n\nSETTING:\n{{SETTING}}\n\nRULES:\n- Harmonize character with scene seamlessly\n- Consistent lighting between character and background\n- Consistent art style throughout\n- Smooth edges, no visible compositing artifacts\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - COMPOSE"}
+  },
+  "6": {
+    "inputs": {
+      "text": "visible edges, harsh compositing, different styles, inconsistent lighting, cut-and-paste look, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "composed_scene", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Composed"}
+  },
+  "9": {
+    "inputs": {"image": "{{COMPOSITE_IMAGE}}", "upload": "image"},
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Composite (Character on Scene)"}
+  },
+  "10": {
+    "inputs": {"pixels": ["9", 0], "vae": ["3", 2]},
+    "class_type": "VAEEncode",
+    "_meta": {"title": "Encode Composite"}
+  }
+}
+

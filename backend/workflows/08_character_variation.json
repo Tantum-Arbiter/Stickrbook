@@ -1,0 +1,68 @@
+{
+  "_workflow": "CHARACTER VARIATION - New Pose via Detailed Prompt",
+  "_description": "Generate character in new pose using detailed text prompts. SD 3.5 Medium alternative to IP-Adapter.",
+  "_placeholders": ["{{STYLE}}", "{{CHARACTER_DETAILS}}", "{{POSE}}", "{{EXPRESSION}}"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "Include VERY detailed character description with colors, features, clothing. Use same description across all variations.",
+  "_character_consistency_tips": [
+    "Use identical character description each time",
+    "Include specific colors (e.g., 'royal blue eyes, cream-colored fur')",
+    "Include distinguishing features (e.g., 'floppy left ear, pink nose')",
+    "Use same style preset for all character generations",
+    "Save good seeds to recreate similar results"
+  ],
+  "_note": "Without IP-Adapter, character consistency relies on detailed consistent prompts",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["7", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Character illustration for children's storybook.\n\nSTYLE:\n{{STYLE}}\n\nCHARACTER (use EXACT same description every time):\n{{CHARACTER_DETAILS}}\n\nPOSE:\n{{POSE}}\n\nEXPRESSION:\n{{EXPRESSION}}\n\nBACKGROUND:\nPlain white background, solid neutral color, no environment, no props.\n\nRULES:\n- Character matches description EXACTLY\n- Use the specific colors and features described\n- Character fully visible, not cropped\n- Plain background for extraction\n- Consistent art style\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - CHARACTER VARIATION"}
+  },
+  "6": {
+    "inputs": {
+      "text": "wrong colors, different features, inconsistent character, background, environment, scene, multiple characters, cropped, cut off, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "7": {
+    "inputs": {"width": 832, "height": 1216, "batch_size": 1},
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {"title": "Portrait Size"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "character_variation", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Character Variation"}
+  }
+}
+

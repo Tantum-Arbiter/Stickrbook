@@ -85,3 +85,32 @@ secrets/
 # Backup files
 *.bak
 *.backup
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+backend/venv/
+backend/env/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Backend outputs
+backend/outputs/
+backend/storyboard.db
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# Alembic
+backend/alembic/versions/*.pyc

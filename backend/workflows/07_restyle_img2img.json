@@ -1,0 +1,67 @@
+{
+  "_workflow": "RESTYLE - Change Style While Preserving Layout",
+  "_description": "Apply new style while keeping composition. SD 3.5 Medium compatible alternative to ControlNet.",
+  "_placeholders": ["{{STYLE}}", "{{SCENE}}", "{{CHANGES}}"],
+  "_requires": ["Source image to restyle"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "Denoise 0.4-0.6 for moderate restyle, 0.6-0.8 for major style change. Lower denoise = more preservation.",
+  "_note": "ControlNet not available for SD 3.5 Medium. Use Img2Img with appropriate denoise instead.",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.55,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["10", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Restyle this children's storybook illustration.\n\nNEW STYLE:\n{{STYLE}}\n\nSCENE CONTENT:\n{{SCENE}}\n\nCHANGES:\n{{CHANGES}}\n\nRULES:\n- Maintain original composition and layout\n- Apply the new style consistently\n- Keep character positions and poses\n- Consistent art style throughout\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - RESTYLE"}
+  },
+  "6": {
+    "inputs": {
+      "text": "wrong composition, different layout, moved elements, changed poses, blurry, low quality, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "restyled", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Restyled"}
+  },
+  "9": {
+    "inputs": {"image": "{{SOURCE_IMAGE}}", "upload": "image"},
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Source Image"}
+  },
+  "10": {
+    "inputs": {"pixels": ["9", 0], "vae": ["3", 2]},
+    "class_type": "VAEEncode",
+    "_meta": {"title": "Encode Source"}
+  }
+}
+

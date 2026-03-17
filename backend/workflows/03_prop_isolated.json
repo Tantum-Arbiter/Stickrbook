@@ -1,0 +1,64 @@
+{
+  "_workflow": "PROP - Isolated Object/Item",
+  "_description": "Generates a single prop/object on plain white background for compositing.",
+  "_placeholders": ["{{STYLE}}", "{{PROP}}", "{{DETAILS}}"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "CFG 5.5-6.0, Steps 30-40, sgm_uniform scheduler",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 30,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["7", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Single prop/object illustration for children's storybook.\n\nSTYLE:\n{{STYLE}}\n\nOBJECT:\n{{PROP}}\n\nDETAILS:\n{{DETAILS}}\n\nBACKGROUND:\nPlain white background, solid color backdrop, completely empty, no environment, no scene, no shadows on ground.\n\nRULES:\n- EXACTLY ONE object/prop only\n- Object fully visible, not cropped\n- Plain white or light gray background ONLY\n- NO environment, NO scene, NO characters\n- Object isolated for easy extraction\n- Consistent with the specified art style\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - PROP ISOLATED"}
+  },
+  "6": {
+    "inputs": {
+      "text": "background, environment, scene, landscape, character, person, people, animal, hand holding, multiple objects, group, pile, collection, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative - Block Everything Else"}
+  },
+  "7": {
+    "inputs": {
+      "width": 768,
+      "height": 768,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {"title": "Square Size"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "prop_isolated", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Prop"}
+  }
+}
+

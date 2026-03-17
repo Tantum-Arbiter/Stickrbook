@@ -1,0 +1,64 @@
+{
+  "_workflow": "SCENE - Empty Environment (No Characters)",
+  "_description": "Generates background/setting only. Use this FIRST to create your scene.",
+  "_placeholders": ["{{STYLE}}", "{{SETTING}}", "{{ATMOSPHERE}}", "{{LIGHTING}}", "{{COMPOSITION}}"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_best_practices": "CFG 5.5-6.0, Steps 30-40, sgm_uniform scheduler",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 35,
+      "cfg": 5.5,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["7", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Create a children's storybook scene - ENVIRONMENT ONLY.\n\nSTYLE:\n{{STYLE}}\n\nSETTING:\n{{SETTING}}\n\nATMOSPHERE:\n{{ATMOSPHERE}}\n\nLIGHTING:\n{{LIGHTING}}\n\nCOMPOSITION:\n{{COMPOSITION}}\n\nRULES:\n- Environment and setting ONLY\n- NO characters, NO people, NO animals, NO creatures\n- Leave clear open space for character placement later\n- Beautiful lighting, depth, and atmosphere\n- Consistent with the specified art style\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - SCENE ONLY"}
+  },
+  "6": {
+    "inputs": {
+      "text": "character, person, people, child, boy, girl, man, woman, animal, creature, figure, rabbit, deer, fox, bird, dog, cat, human, face, body, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative - Block Characters"}
+  },
+  "7": {
+    "inputs": {
+      "width": 1080,
+      "height": 704,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {"title": "Canvas Size"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "scene_empty", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Scene"}
+  }
+}
+

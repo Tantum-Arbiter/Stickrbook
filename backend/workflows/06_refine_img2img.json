@@ -1,0 +1,67 @@
+{
+  "_workflow": "REFINE - Polish/Adjust Existing Image",
+  "_description": "Make subtle refinements to an existing image while preserving composition.",
+  "_placeholders": ["{{STYLE}}", "{{CHANGES}}", "{{PRESERVE}}"],
+  "_requires": ["Source image to refine"],
+  "_model": "SD 3.5 Medium (optimized settings)",
+  "_denoise_guide": "0.2-0.3 = subtle polish, 0.4-0.5 = moderate changes, 0.6+ = major changes",
+  "_best_practices": "For refinement, lower CFG (4.0-5.0) can be smoother",
+  "1": {
+    "inputs": {
+      "seed": 12345,
+      "steps": 30,
+      "cfg": 5.0,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.35,
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["10", 0]
+    },
+    "class_type": "KSampler",
+    "_meta": {"title": "KSampler"}
+  },
+  "3": {
+    "inputs": {"ckpt_name": "sd3.5_medium_incl_clips_t5xxlfp8scaled.safetensors"},
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {"title": "Load Checkpoint"}
+  },
+  "4": {
+    "inputs": {"samples": ["1", 0], "vae": ["3", 2]},
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"}
+  },
+  "5": {
+    "inputs": {
+      "text": "Refine this children's storybook illustration.\n\nSTYLE:\n{{STYLE}}\n\nCHANGES:\n{{CHANGES}}\n\nPRESERVE:\n{{PRESERVE}}\n\nRULES:\n- Maintain original composition and layout\n- Keep character identities consistent\n- Enhance quality without changing content\n- Consistent art style throughout\n- No text, no watermark, no logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive - REFINE"}
+  },
+  "6": {
+    "inputs": {
+      "text": "changed composition, different character, wrong style, blurry, low quality, photorealistic, 3d render, text, watermark, logo",
+      "clip": ["3", 1]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt"}
+  },
+  "8": {
+    "inputs": {"filename_prefix": "refined", "images": ["4", 0]},
+    "class_type": "SaveImage",
+    "_meta": {"title": "Save Refined"}
+  },
+  "9": {
+    "inputs": {"image": "{{SOURCE_IMAGE}}", "upload": "image"},
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Source Image"}
+  },
+  "10": {
+    "inputs": {"pixels": ["9", 0], "vae": ["3", 2]},
+    "class_type": "VAEEncode",
+    "_meta": {"title": "Encode Source"}
+  }
+}
+
