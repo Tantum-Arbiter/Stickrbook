@@ -11,6 +11,11 @@
 # Background Removal (RMBG-v1.4)
 rembg>=2.0.50
 
+# ONNX Runtime (required by rembg)
+# For CPU: pip install onnxruntime
+# For GPU: pip install onnxruntime-gpu
+onnxruntime>=1.16.0  # CPU version (default)
+
 # Scene Analysis (CLIP, Depth-Anything)
 transformers>=4.35.0
 torch>=2.0.0

@@ -338,31 +338,42 @@ cat backend/.env | grep COMFYUI_URL
 This means AI dependencies aren't installed. You have two options:
 
 **Option 1: Install AI Dependencies (Recommended)**
+
+**macOS/Linux:**
 ```bash
-# macOS/Linux
 cd backend
 source venv/bin/activate
+
+# Install AI dependencies
 pip install -r requirements-ai.txt
 
-# For GPU support (NVIDIA only)
+# For GPU support (NVIDIA only) - replace onnxruntime with GPU version
+pip uninstall onnxruntime -y
+pip install onnxruntime-gpu
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
-# For CPU only, edit backend/.env:
+# For CPU only (default), edit backend/.env:
 # MAGIC_MERGE_DEVICE=cpu
 ```
 
+**Windows:**
 ```powershell
-# Windows
 cd backend
 .\venv\Scripts\Activate.ps1
+
+# Install AI dependencies
 pip install -r requirements-ai.txt
 
-# For GPU support (NVIDIA only)
+# For GPU support (NVIDIA only) - replace onnxruntime with GPU version
+pip uninstall onnxruntime -y
+pip install onnxruntime-gpu
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
-# For CPU only, edit backend/.env:
+# For CPU only (default), edit backend/.env:
 # MAGIC_MERGE_DEVICE=cpu
 ```
+
+**Note:** The `requirements-ai.txt` includes `onnxruntime` (CPU version) by default. If you have an NVIDIA GPU, replace it with `onnxruntime-gpu` for better performance.
 
 **Option 2: Temporarily Disable Magic Merge (Quick Start)**
 
