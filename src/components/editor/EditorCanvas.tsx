@@ -6,7 +6,7 @@
  */
 
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { useEditorStore } from '../../store';
+import { useEditorStore, useProjectsStore } from '../../store';
 import type { LayerOverlay } from '../../store/types';
 
 export interface EditorCanvasProps {
@@ -19,6 +19,8 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [draggingLayer, setDraggingLayer] = useState<string | null>(null);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, layerX: 0, layerY: 0 });
 
   const {
     zoom,
@@ -35,7 +37,10 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
     selectLayer,
     addLayer,
     setBaseImage,
+    updateLayer,
   } = useEditorStore();
+
+  const currentBook = useProjectsStore((s) => s.currentBook());
 
   // Handle mouse wheel zoom
   const handleWheel = useCallback(
@@ -52,28 +57,40 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
   // Handle pan start
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      // Don't pan if we're dragging a layer
+      if (draggingLayer) return;
+
       if (activeTool === 'pan' || e.button === 1 || (e.button === 0 && e.altKey)) {
         setIsPanning(true);
         setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
         e.preventDefault();
       }
     },
-    [activeTool, panX, panY]
+    [activeTool, panX, panY, draggingLayer]
   );
 
-  // Handle pan move
+  // Handle pan move and layer drag
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (isPanning) {
+      if (draggingLayer) {
+        // Move the layer
+        const dx = (e.clientX - dragStart.x) / zoom;
+        const dy = (e.clientY - dragStart.y) / zoom;
+        updateLayer(draggingLayer, {
+          x: dragStart.layerX + dx,
+          y: dragStart.layerY + dy,
+        });
+      } else if (isPanning) {
         setPan(e.clientX - panStart.x, e.clientY - panStart.y);
       }
     },
-    [isPanning, panStart, setPan]
+    [isPanning, panStart, setPan, draggingLayer, dragStart, zoom, updateLayer]
   );
 
-  // Handle pan end
+  // Handle pan end and layer drag end
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
+    setDraggingLayer(null);
   }, []);
 
   // Handle layer selection
@@ -216,6 +233,17 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
               layer={layer}
               isSelected={layer.id === selectedLayerId}
               onClick={(e) => handleLayerClick(layer, e)}
+              onDragStart={(e) => {
+                const rect = wrapperRef.current?.getBoundingClientRect();
+                if (!rect) return;
+                setDraggingLayer(layer.id);
+                setDragStart({
+                  x: e.clientX,
+                  y: e.clientY,
+                  layerX: layer.x,
+                  layerY: layer.y,
+                });
+              }}
             />
           ))}
       </div>
@@ -228,10 +256,16 @@ interface CanvasLayerProps {
   layer: LayerOverlay;
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
+  onDragStart: (e: React.MouseEvent) => void;
 }
 
-function CanvasLayer({ layer, isSelected, onClick }: CanvasLayerProps) {
+function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerProps) {
   const { deleteLayer } = useEditorStore();
+  const currentBook = useProjectsStore((s) => s.currentBook());
+
+  // Find the asset to get the correct image path
+  const asset = currentBook?.assets.find((a) => a.id === layer.assetId);
+  const imagePath = asset?.imagePath || '';
 
   const style: React.CSSProperties = {
     position: 'absolute',
@@ -243,18 +277,34 @@ function CanvasLayer({ layer, isSelected, onClick }: CanvasLayerProps) {
     opacity: layer.opacity,
     zIndex: layer.zIndex,
     pointerEvents: layer.locked ? 'none' : 'auto',
+    cursor: layer.locked ? 'default' : (isSelected ? 'move' : 'pointer'),
     filter: layer.effects
       ? `hue-rotate(${layer.effects.hue}deg) saturate(${layer.effects.saturation}%) brightness(${layer.effects.brightness}%) contrast(${layer.effects.contrast}%) blur(${layer.effects.blur}px)`
       : undefined,
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (layer.locked) return;
+    e.stopPropagation(); // Prevent canvas pan
+    onClick(e);
+    if (isSelected) {
+      onDragStart(e);
+    }
   };
 
   return (
     <div
       className={`canvas-element ${isSelected ? 'selected' : ''}`}
       style={style}
-      onClick={onClick}
+      onMouseDown={handleMouseDown}
     >
-      <img src={`/v1/files/${layer.assetId}`} alt="Layer" draggable={false} />
+      {imagePath ? (
+        <img src={imagePath} alt="Layer" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      ) : (
+        <div style={{ width: '100%', height: '100%', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          Layer
+        </div>
+      )}
 
       {/* Resize handles (visible when selected) */}
       {isSelected && !layer.locked && (
