@@ -295,18 +295,66 @@ def alpha_blend(
     position: Dict[str, int]
 ) -> np.ndarray:
     """
-    Simple alpha blending (legacy function, calls enhanced version)
+    Clean alpha blending without edge feathering (prevents ghosting)
 
     Args:
-        source: Source image array
-        target: Target image array
-        mask: Alpha mask array
+        source: Source image array (RGB)
+        target: Target image array (RGB)
+        mask: Alpha mask array (grayscale, 0-255)
         position: {'x': int, 'y': int} top-left position
 
     Returns:
         Blended image array
     """
-    return enhanced_alpha_blend(source, target, mask, position, feather_edges=True)
+    result = target.copy()
+
+    x, y = position['x'], position['y']
+    h, w = source.shape[:2]
+
+    # Ensure mask matches source dimensions
+    if mask.shape[:2] != source.shape[:2]:
+        mask = cv2.resize(mask, (source.shape[1], source.shape[0]))
+
+    # Calculate region bounds
+    target_h, target_w = target.shape[:2]
+
+    # Clip to target bounds
+    src_x1 = max(0, -x)
+    src_y1 = max(0, -y)
+    src_x2 = min(w, target_w - x)
+    src_y2 = min(h, target_h - y)
+
+    dst_x1 = max(0, x)
+    dst_y1 = max(0, y)
+    dst_x2 = dst_x1 + (src_x2 - src_x1)
+    dst_y2 = dst_y1 + (src_y2 - src_y1)
+
+    if src_x2 <= src_x1 or src_y2 <= src_y1:
+        return result  # No overlap
+
+    # Extract regions
+    source_region = source[src_y1:src_y2, src_x1:src_x2]
+    target_region = target[dst_y1:dst_y2, dst_x1:dst_x2]
+    mask_region = mask[src_y1:src_y2, src_x1:src_x2]
+
+    # Normalize mask to 0-1 range
+    alpha = mask_region.astype(float) / 255.0
+
+    # Expand alpha to 3 channels for RGB blending
+    if len(alpha.shape) == 2:
+        alpha = alpha[:, :, np.newaxis]
+
+    # Simple alpha blending: result = source * alpha + target * (1 - alpha)
+    # NO edge feathering, NO distance transforms - just clean alpha compositing
+    blended = (
+        source_region.astype(float) * alpha +
+        target_region.astype(float) * (1 - alpha)
+    ).astype(np.uint8)
+
+    # Place blended region into result
+    result[dst_y1:dst_y2, dst_x1:dst_x2] = blended
+
+    return result
 
 
 def add_shadow(
