@@ -41,8 +41,9 @@ def composite_images(
         dict with 'result' (base64 composited image)
     """
     # Decode images
-    asset = decode_image(asset_data)
-    background = decode_image(background_data)
+    # Don't force mode on asset - preserve RGBA if present to detect transparency
+    asset = decode_image(asset_data, mode=None)
+    background = decode_image(background_data, mode='RGB')
     mask = decode_image(mask_data, mode='L')
 
     # Scale asset if needed
@@ -52,7 +53,17 @@ def composite_images(
         mask = mask.resize(new_size, Image.LANCZOS)
 
     # Convert to numpy arrays
-    asset_array = np.array(asset.convert('RGB'))
+    # IMPORTANT: If asset has alpha channel, composite it onto white background first
+    # This prevents ghosting from transparent pixels with black/gray RGB values
+    if asset.mode == 'RGBA':
+        # Create white background
+        white_bg = Image.new('RGB', asset.size, (255, 255, 255))
+        # Composite asset onto white using its alpha channel
+        white_bg.paste(asset, (0, 0), asset)
+        asset_array = np.array(white_bg)
+    else:
+        asset_array = np.array(asset.convert('RGB'))
+
     bg_array = np.array(background.convert('RGB'))
     mask_array = np.array(mask)
 
@@ -359,10 +370,22 @@ def add_shadow(
     return result
 
 
-def decode_image(data: str, mode: str = 'RGB') -> Image.Image:
-    """Decode base64 image data"""
+def decode_image(data: str, mode: str = None) -> Image.Image:
+    """Decode base64 image data
+
+    Args:
+        data: Base64 encoded image data
+        mode: Target mode ('RGB', 'RGBA', 'L', etc.). If None, preserves original mode.
+
+    Returns:
+        PIL Image
+    """
     if data.startswith('data:image'):
         data = data.split(',')[1]
     image_bytes = base64.b64decode(data)
-    return Image.open(io.BytesIO(image_bytes)).convert(mode)
+    img = Image.open(io.BytesIO(image_bytes))
+
+    if mode is not None:
+        return img.convert(mode)
+    return img
 
