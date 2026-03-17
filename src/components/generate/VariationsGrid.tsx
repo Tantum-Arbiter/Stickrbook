@@ -489,9 +489,21 @@ function VariationCard({
           {job.progress > 0 && !isFailed && (
             <span className="placeholder-progress">{Math.round(job.progress * 100)}%</span>
           )}
-          {isFailed && job.error && (
-            <span className="placeholder-error" style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '4px' }}>
-              {job.error}
+          {isFailed && job.errorMessage && (
+            <span
+              className="placeholder-error"
+              style={{
+                fontSize: '0.75rem',
+                color: '#ef4444',
+                marginTop: '4px',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={job.errorMessage} // Show full error on hover
+            >
+              Error: {job.errorMessage}
             </span>
           )}
         </div>

@@ -216,7 +216,7 @@ async def process_job(job: Job):
             logger.info(f"  Deleted {deleted} intermediate images from ComfyUI output")
 
         # Post-process: Remove background for character/object generations
-        generation_mode = job.metadata.get("generation_mode") if job.metadata else None
+        generation_mode = job.metadata.generation_mode if job.metadata else None
         if generation_mode in ["character", "object"] or job.workflow_type.value in ["character_ref", "character", "ref", "prop", "object", "item"]:
             job.progress = JobProgress(phase="removing_background", percent=90)
             logger.info(f"  Removing background for {generation_mode or job.workflow_type.value} generation...")

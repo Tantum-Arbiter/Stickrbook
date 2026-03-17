@@ -840,10 +840,10 @@ async def save_variation_to_workspace(
         raise HTTPException(status_code=404, detail="Job not found or not complete")
 
     # Get workspace info from job metadata
-    metadata = job.request.metadata or {}
-    session_id = metadata.get("workspace_session")
-    session_date = metadata.get("workspace_date")
-    workspace_index = metadata.get("workspace_index", 0)
+    metadata = job.metadata
+    session_id = metadata.workspace_session if metadata else None
+    session_date = metadata.workspace_date if metadata else None
+    workspace_index = metadata.workspace_index if metadata and metadata.workspace_index is not None else 0
 
     if not session_id or not session_date:
         raise HTTPException(status_code=400, detail="Job has no workspace session info")
