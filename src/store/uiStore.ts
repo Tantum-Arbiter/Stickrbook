@@ -23,6 +23,9 @@ export const useUIStore = create<UIState>()(
       rightSidebarCollapsed: true,
       sidebarZoom: 1.0, // Default zoom level
 
+      // Text scale setting (1.0 = 100%, 0.8 = 80%, 1.2 = 120%)
+      textScale: 1.0,
+
       // Tab state
       activeTab: 'generate',
 
@@ -59,6 +62,13 @@ export const useUIStore = create<UIState>()(
 
       setSidebarZoom: (zoom: number) => {
         set({ sidebarZoom: Math.max(0.5, Math.min(2.0, zoom)) });
+      },
+
+      setTextScale: (scale: number) => {
+        const clampedScale = Math.max(0.7, Math.min(1.5, scale));
+        set({ textScale: clampedScale });
+        // Update CSS variable
+        document.documentElement.style.setProperty('--text-scale', clampedScale.toString());
       },
 
       // Tab actions
@@ -141,12 +151,13 @@ export const useUIStore = create<UIState>()(
     {
       name: 'storyboard-ui-storage',
       partialize: (state) => ({
-        // Only persist sidebar preferences
+        // Only persist sidebar preferences and settings
         leftSidebarWidth: state.leftSidebarWidth,
         leftSidebarCollapsed: state.leftSidebarCollapsed,
         rightSidebarWidth: state.rightSidebarWidth,
         rightSidebarCollapsed: state.rightSidebarCollapsed,
         expandedPanels: state.expandedPanels,
+        textScale: state.textScale,
       }),
     }
   )

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   AppLayout,
   Toolbar,
@@ -7,7 +7,8 @@ import {
 } from './components/layout';
 import { Button, Tabs, Tab } from './components/ui';
 import { ToastProvider } from './components/ui/Toast';
-import { Palette, Compass } from 'lucide-react';
+import { SettingsModal } from './components/ui/SettingsModal';
+import { Palette, Compass, Settings } from 'lucide-react';
 
 // Domain components
 import { GeneratePanel, JobStatusIcon } from './components/generate';
@@ -28,6 +29,7 @@ function App() {
   const setActiveTab = useUIStore((s) => s.setActiveTab);
   const { canUndo, canRedo, undo, redo } = useHistory();
   const { loadProjects } = useProjects();
+  const [showSettings, setShowSettings] = useState(false);
 
   // Job tracking from generation store
   const completedJobs = useGenerationStore((s) => s.jobHistory.length);
@@ -54,7 +56,8 @@ function App() {
           actions: (
             <>
               <JobStatusIcon />
-              <Button variant="ghost" size="small">
+              <Button variant="ghost" size="small" onClick={() => setShowSettings(true)}>
+                <Settings size={16} style={{ marginRight: '4px' }} />
                 Settings
               </Button>
               <Button variant="primary" size="small">
@@ -113,6 +116,9 @@ function App() {
         {activeTab === 'edit' && <EditPanel />}
         {activeTab === 'story' && <StoryPanel />}
       </AppLayout>
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </ToastProvider>
   );
 }

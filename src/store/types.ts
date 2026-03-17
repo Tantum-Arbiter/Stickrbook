@@ -382,6 +382,9 @@ export interface UIState {
   rightSidebarCollapsed: boolean;
   sidebarZoom: number; // Zoom level for sidebar content (0.5 to 2.0)
 
+  // Text scale setting
+  textScale: number; // Global text scale (0.7 to 1.5, default 1.0)
+
   // Tab state
   activeTab: 'generate' | 'edit' | 'story';
 
@@ -405,6 +408,7 @@ export interface UIState {
   setRightSidebarWidth: (width: number) => void;
   toggleRightSidebar: () => void;
   setSidebarZoom: (zoom: number) => void;
+  setTextScale: (scale: number) => void;
 
   setActiveTab: (tab: UIState['activeTab']) => void;
 
