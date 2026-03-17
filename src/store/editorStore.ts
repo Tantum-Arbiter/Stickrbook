@@ -29,6 +29,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Layer state
   layers: [],
   selectedLayerId: null,
+  selectedLayerIds: [],
   baseImagePath: null,
 
   // Selection state
@@ -93,8 +94,34 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
 
-  selectLayer: (id: string | null) => {
-    set({ selectedLayerId: id });
+  selectLayer: (id: string | null, multiSelect: boolean = false) => {
+    if (multiSelect && id) {
+      // Multi-select mode (Shift+Click)
+      const currentIds = get().selectedLayerIds;
+      const isAlreadySelected = currentIds.includes(id);
+
+      if (isAlreadySelected) {
+        // Deselect this layer
+        const newIds = currentIds.filter((layerId) => layerId !== id);
+        set({
+          selectedLayerIds: newIds,
+          selectedLayerId: newIds.length > 0 ? newIds[newIds.length - 1] : null
+        });
+      } else {
+        // Add to selection
+        const newIds = [...currentIds, id];
+        set({
+          selectedLayerIds: newIds,
+          selectedLayerId: id
+        });
+      }
+    } else {
+      // Single select mode
+      set({
+        selectedLayerId: id,
+        selectedLayerIds: id ? [id] : []
+      });
+    }
   },
 
   reorderLayers: (layerIds: string[]) => {

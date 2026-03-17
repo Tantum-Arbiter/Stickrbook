@@ -270,6 +270,7 @@ export interface EditorState {
   // Layer state
   layers: LayerOverlay[];
   selectedLayerId: string | null;
+  selectedLayerIds: string[]; // For multi-selection
   baseImagePath: string | null;
 
   // Selection state

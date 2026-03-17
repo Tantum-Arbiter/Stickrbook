@@ -21,6 +21,9 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [draggingLayer, setDraggingLayer] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, layerX: 0, layerY: 0 });
+  const [resizingLayer, setResizingLayer] = useState<string | null>(null);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, layerX: 0, layerY: 0 });
 
   const {
     zoom,
@@ -31,6 +34,7 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
     layers,
     baseImagePath,
     selectedLayerId,
+    selectedLayerIds,
     activeTool,
     setZoom,
     setPan,
@@ -69,10 +73,41 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
     [activeTool, panX, panY, draggingLayer]
   );
 
-  // Handle pan move and layer drag
+  // Handle pan move, layer drag, and resize
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (draggingLayer) {
+      if (resizingLayer && resizeHandle) {
+        // Resize the layer
+        const dx = (e.clientX - resizeStart.x) / zoom;
+        const dy = (e.clientY - resizeStart.y) / zoom;
+
+        let newWidth = resizeStart.width;
+        let newHeight = resizeStart.height;
+        let newX = resizeStart.layerX;
+        let newY = resizeStart.layerY;
+
+        if (resizeHandle.includes('r')) {
+          newWidth = Math.max(20, resizeStart.width + dx);
+        }
+        if (resizeHandle.includes('l')) {
+          newWidth = Math.max(20, resizeStart.width - dx);
+          newX = resizeStart.layerX + dx;
+        }
+        if (resizeHandle.includes('b')) {
+          newHeight = Math.max(20, resizeStart.height + dy);
+        }
+        if (resizeHandle.includes('t')) {
+          newHeight = Math.max(20, resizeStart.height - dy);
+          newY = resizeStart.layerY + dy;
+        }
+
+        updateLayer(resizingLayer, {
+          width: newWidth,
+          height: newHeight,
+          x: newX,
+          y: newY,
+        });
+      } else if (draggingLayer) {
         // Move the layer
         const dx = (e.clientX - dragStart.x) / zoom;
         const dy = (e.clientY - dragStart.y) / zoom;
@@ -84,20 +119,23 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
         setPan(e.clientX - panStart.x, e.clientY - panStart.y);
       }
     },
-    [isPanning, panStart, setPan, draggingLayer, dragStart, zoom, updateLayer]
+    [isPanning, panStart, setPan, draggingLayer, dragStart, resizingLayer, resizeHandle, resizeStart, zoom, updateLayer]
   );
 
-  // Handle pan end and layer drag end
+  // Handle pan end, layer drag end, and resize end
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
     setDraggingLayer(null);
+    setResizingLayer(null);
+    setResizeHandle(null);
   }, []);
 
   // Handle layer selection
   const handleLayerClick = useCallback(
     (layer: LayerOverlay, e: React.MouseEvent) => {
       e.stopPropagation();
-      selectLayer(layer.id);
+      const multiSelect = e.shiftKey;
+      selectLayer(layer.id, multiSelect);
       onLayerClick?.(layer);
     },
     [selectLayer, onLayerClick]
@@ -208,18 +246,20 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
       onClick={handleCanvasClick}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <div
         ref={wrapperRef}
         className={`editor-canvas-wrapper ${isPanning ? 'panning' : ''} ${zoom >= 4 ? 'pixelated' : ''}`}
-        style={wrapperStyle}
+        style={{ ...wrapperStyle, userSelect: 'none', WebkitUserSelect: 'none' }}
       >
         {/* Base image layer */}
         {baseImagePath && (
           <img
             src={baseImagePath}
             alt="Base"
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            draggable={false}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }}
           />
         )}
 
@@ -231,7 +271,7 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
             <CanvasLayer
               key={layer.id}
               layer={layer}
-              isSelected={layer.id === selectedLayerId}
+              isSelected={selectedLayerIds.includes(layer.id)}
               onClick={(e) => handleLayerClick(layer, e)}
               onDragStart={(e) => {
                 const rect = wrapperRef.current?.getBoundingClientRect();
@@ -240,6 +280,18 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
                 setDragStart({
                   x: e.clientX,
                   y: e.clientY,
+                  layerX: layer.x,
+                  layerY: layer.y,
+                });
+              }}
+              onResizeStart={(e, handle) => {
+                setResizingLayer(layer.id);
+                setResizeHandle(handle);
+                setResizeStart({
+                  x: e.clientX,
+                  y: e.clientY,
+                  width: layer.width,
+                  height: layer.height,
                   layerX: layer.x,
                   layerY: layer.y,
                 });
@@ -257,9 +309,10 @@ interface CanvasLayerProps {
   isSelected: boolean;
   onClick: (e: React.MouseEvent) => void;
   onDragStart: (e: React.MouseEvent) => void;
+  onResizeStart: (e: React.MouseEvent, handle: string) => void;
 }
 
-function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerProps) {
+function CanvasLayer({ layer, isSelected, onClick, onDragStart, onResizeStart }: CanvasLayerProps) {
   const { deleteLayer } = useEditorStore();
   const currentBook = useProjectsStore((s) => s.currentBook());
 
@@ -278,6 +331,8 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerPro
     zIndex: layer.zIndex,
     pointerEvents: layer.locked ? 'none' : 'auto',
     cursor: layer.locked ? 'default' : (isSelected ? 'move' : 'pointer'),
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
     filter: layer.effects
       ? `hue-rotate(${layer.effects.hue}deg) saturate(${layer.effects.saturation}%) brightness(${layer.effects.brightness}%) contrast(${layer.effects.contrast}%) blur(${layer.effects.blur}px)`
       : undefined,
@@ -292,6 +347,13 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerPro
     }
   };
 
+  const handleResizeMouseDown = (e: React.MouseEvent, handle: string) => {
+    if (layer.locked) return;
+    e.stopPropagation();
+    e.preventDefault();
+    onResizeStart(e, handle);
+  };
+
   return (
     <div
       className={`canvas-element ${isSelected ? 'selected' : ''}`}
@@ -299,9 +361,31 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerPro
       onMouseDown={handleMouseDown}
     >
       {imagePath ? (
-        <img src={imagePath} alt="Layer" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        <img
+          src={imagePath}
+          alt="Layer"
+          draggable={false}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            pointerEvents: 'none'
+          }}
+        />
       ) : (
-        <div style={{ width: '100%', height: '100%', background: '#ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: '100%',
+          height: '100%',
+          background: '#ccc',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          pointerEvents: 'none'
+        }}>
           Layer
         </div>
       )}
@@ -309,10 +393,26 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart }: CanvasLayerPro
       {/* Resize handles (visible when selected) */}
       {isSelected && !layer.locked && (
         <>
-          <div className="resize-handle tl" data-handle="tl" />
-          <div className="resize-handle tr" data-handle="tr" />
-          <div className="resize-handle bl" data-handle="bl" />
-          <div className="resize-handle br" data-handle="br" />
+          <div
+            className="resize-handle tl"
+            data-handle="tl"
+            onMouseDown={(e) => handleResizeMouseDown(e, 'tl')}
+          />
+          <div
+            className="resize-handle tr"
+            data-handle="tr"
+            onMouseDown={(e) => handleResizeMouseDown(e, 'tr')}
+          />
+          <div
+            className="resize-handle bl"
+            data-handle="bl"
+            onMouseDown={(e) => handleResizeMouseDown(e, 'bl')}
+          />
+          <div
+            className="resize-handle br"
+            data-handle="br"
+            onMouseDown={(e) => handleResizeMouseDown(e, 'br')}
+          />
           <button
             className="delete-btn"
             onClick={(e) => {

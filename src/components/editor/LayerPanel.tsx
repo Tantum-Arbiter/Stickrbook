@@ -40,6 +40,7 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
   const {
     layers,
     selectedLayerId,
+    selectedLayerIds,
     baseImagePath,
     selectLayer,
     updateLayer,
@@ -195,8 +196,11 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
                   >
                     <LayerItem
                       layer={layer}
-                      isSelected={layer.id === selectedLayerId}
-                      onSelect={() => selectLayer(layer.id)}
+                      isSelected={selectedLayerIds.includes(layer.id)}
+                      onSelect={(e) => {
+                        const multiSelect = e?.shiftKey || false;
+                        selectLayer(layer.id, multiSelect);
+                      }}
                       onToggleVisibility={() => handleToggleVisibility(layer)}
                       onToggleLock={() => handleToggleLock(layer)}
                       onDelete={() => deleteLayer(layer.id)}
@@ -237,7 +241,7 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
 interface LayerItemProps {
   layer: LayerOverlay;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: React.MouseEvent) => void;
   onToggleVisibility: () => void;
   onToggleLock: () => void;
   onDelete: () => void;
