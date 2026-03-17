@@ -388,15 +388,27 @@ function VariationCard({
 }: VariationCardProps) {
   // Show loading state if job is active
   if (job && !variation) {
+    const isFailed = job.status === 'failed' || job.status === 'error';
     return (
       <div className="variation-card">
-        <div className={`variation-placeholder ${job.status === 'generating' ? 'loading' : ''}`}>
+        <div
+          className={`variation-placeholder ${job.status === 'generating' ? 'loading' : ''}`}
+          style={{
+            border: isFailed ? '2px solid #ef4444' : undefined,
+            background: isFailed ? 'rgba(239, 68, 68, 0.1)' : undefined,
+          }}
+        >
           <span className="placeholder-number">{index + 1}</span>
-          <span className="placeholder-status">
-            {job.status === 'pending' ? 'Queued' : 'Generating'}
+          <span className="placeholder-status" style={{ color: isFailed ? '#ef4444' : undefined }}>
+            {isFailed ? 'Failed' : job.status === 'pending' ? 'Queued' : 'Generating'}
           </span>
-          {job.progress > 0 && (
+          {job.progress > 0 && !isFailed && (
             <span className="placeholder-progress">{Math.round(job.progress * 100)}%</span>
+          )}
+          {isFailed && job.error && (
+            <span className="placeholder-error" style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '4px' }}>
+              {job.error}
+            </span>
           )}
         </div>
       </div>

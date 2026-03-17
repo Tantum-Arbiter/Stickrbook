@@ -300,12 +300,50 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const currentBook = useProjectsStore.getState().currentBook();
     if (!currentBook) throw new Error('No book selected');
 
-    // Create asset from variation
     const mode = get().mode;
+    const assetType = mode === 'scene' ? 'background' : mode === 'character' ? 'character' : 'prop';
+
+    // For character/object types, use the transparency endpoint
+    if (mode === 'character' || mode === 'object') {
+      try {
+        const response = await fetch(
+          `/v1/storyboard/books/${currentBook.id}/variations/${id}/save-with-transparency?asset_type=${assetType}`,
+          { method: 'POST' }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to save with transparency: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        const backendAsset = result.asset;
+
+        // Convert backend asset to frontend Asset type
+        const asset: Asset = {
+          id: backendAsset.id,
+          name: backendAsset.name,
+          assetType: backendAsset.type || assetType,
+          imagePath: backendAsset.image_path,
+          thumbnailPath: backendAsset.image_path,
+          hasTransparency: true,
+          tags: backendAsset.tags || ['transparent'],
+          createdAt: new Date().toISOString(),
+        };
+
+        // Add to projects store
+        await useProjectsStore.getState().addAsset(currentBook.id, asset);
+        return asset;
+      } catch (error) {
+        console.error('Failed to save with transparency, falling back to regular save:', error);
+        // Fall through to regular save
+      }
+    }
+
+    // Regular save for scenes or if transparency save failed
     const asset: Asset = {
       id: variation.id,
       name: `Variation ${variation.seed}`,
-      assetType: mode === 'scene' ? 'background' : mode === 'character' ? 'character' : 'prop',
+      assetType,
       imagePath: variation.imagePath,
       thumbnailPath: variation.thumbnailPath,
       hasTransparency: false,
