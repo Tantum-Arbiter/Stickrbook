@@ -312,7 +312,7 @@ def _workspace_to_dict(workspace: db_models.Workspace) -> dict:
     """Convert SQLAlchemy Workspace model to API response dict."""
     return {
         "session_id": workspace.id,
-        "date": workspace.session_date,
+        "date": workspace.date,
         "prompt": workspace.prompt or "",
         "preset_name": workspace.preset_name or "",
         "book_id": workspace.book_id,
@@ -627,7 +627,7 @@ single object, isolated prop, transparent background, game asset style, clean ed
 
     db_workspace = db_models.Workspace(
         id=session_id,
-        session_date=session_date,
+        date=session_date,
         prompt=request.prompt,
         preset_name=book.preset_name or "",
         book_id=book_id
@@ -658,7 +658,7 @@ single object, isolated prop, transparent background, game asset style, clean ed
                 steps=book.default_steps,
                 cfg=book.default_cfg,
                 seed=seed,
-                model=book.model
+                model=book.default_model
             ),
             metadata={
                 "book_id": book_id,
@@ -2164,7 +2164,7 @@ async def inpaint_region(
                 steps=book.default_steps,
                 cfg=book.default_cfg,
                 seed=seed,
-                model=book.model
+                model=book.default_model
             ),
             prompt_data={
                 "base_image": base_path,
