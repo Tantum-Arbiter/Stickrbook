@@ -576,7 +576,8 @@ export const useGenerationStore = create<GenerationState>()(
     }),
     {
       name: 'stickrbook-generation',
-      // Persist active jobs, variations, and generation params
+      // Persist generation params and active jobs only
+      // Don't persist variations - they reference temporary files that expire
       partialize: (state) => ({
         // Generation params
         mode: state.mode,
@@ -591,12 +592,12 @@ export const useGenerationStore = create<GenerationState>()(
         variationCount: state.variationCount,
         characterId: state.characterId,
         ipadapterWeight: state.ipadapterWeight,
-        // Active state
-        variations: state.variations,
+        // Active jobs only (will be validated on rehydration)
         activeJobs: state.activeJobs,
         jobHistory: state.jobHistory,
         currentPreset: state.currentPreset,
-        // Don't persist UI state
+        // Don't persist temporary state
+        // variations: [], // Don't persist - files expire after 10 minutes
         // isGenerating: false, // Always start fresh
         // selectedVariationId: null,
         // compareMode: false,
@@ -613,12 +614,15 @@ export const useGenerationStore = create<GenerationState>()(
 
         console.log(`📊 Rehydrated state: ${state.activeJobs?.length || 0} active jobs, ${state.variations?.length || 0} variations`);
 
+        // Clear everything on rehydration to prevent 404 errors from expired files
+        // The backend only keeps job outputs for ~10 minutes, so old variations will 404
+        const TEN_MINUTES = 10 * 60 * 1000;
+        const now = Date.now();
+
+        // Clear old active jobs
         if (state?.activeJobs && state.activeJobs.length > 0) {
           console.log(`🔍 Validating ${state.activeJobs.length} active jobs...`);
 
-          // Clear jobs older than 10 minutes (backend job retention time)
-          const TEN_MINUTES = 10 * 60 * 1000;
-          const now = Date.now();
           const validJobs: GenerationJob[] = [];
           const expiredJobs: GenerationJob[] = [];
 
@@ -655,6 +659,26 @@ export const useGenerationStore = create<GenerationState>()(
           }
         } else {
           console.log('✓ No active jobs to validate');
+        }
+
+        // Clear old variations (they reference temporary files that expire)
+        // Variations are temporary - once saved as assets, they're in the project store
+        if (state?.variations && state.variations.length > 0) {
+          console.log(`🖼️ Clearing ${state.variations.length} old variations (temporary files expire)`);
+          state.variations = [];
+        }
+
+        // Clear job history older than 10 minutes
+        if (state?.jobHistory && state.jobHistory.length > 0) {
+          const validHistory = state.jobHistory.filter((job) => {
+            const jobAge = now - new Date(job.createdAt).getTime();
+            return jobAge <= TEN_MINUTES;
+          });
+
+          if (validHistory.length < state.jobHistory.length) {
+            console.log(`🗑️ Cleared ${state.jobHistory.length - validHistory.length} old history entries`);
+            state.jobHistory = validHistory;
+          }
         }
       },
     }
