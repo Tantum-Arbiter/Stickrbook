@@ -409,6 +409,7 @@ export const useGenerationStore = create<GenerationState>()(
               prompt: job.prompt || '',
               negativePrompt: job.negativePrompt,
               selected: false,
+              createdAt: job.createdAt, // Use job creation time for age tracking
               batchName: job.batchName, // Include batch name for organization
               // Include multi-view metadata if present
               pose: job.metadata?.pose,
@@ -475,6 +476,8 @@ export const useGenerationStore = create<GenerationState>()(
             prompt: job.prompt || '',
             negativePrompt: job.negativePrompt,
             selected: false,
+            createdAt: job.createdAt, // Use job creation time for age tracking
+            batchName: job.batchName, // Include batch name for organization
             // Include multi-view metadata if present
             pose: job.metadata?.pose,
             viewAngle: job.metadata?.viewAngle,
@@ -576,8 +579,7 @@ export const useGenerationStore = create<GenerationState>()(
     }),
     {
       name: 'stickrbook-generation',
-      // Persist generation params and active jobs only
-      // Don't persist variations - they reference temporary files that expire
+      // Persist generation params, active jobs, and recent variations
       partialize: (state) => ({
         // Generation params
         mode: state.mode,
@@ -592,12 +594,12 @@ export const useGenerationStore = create<GenerationState>()(
         variationCount: state.variationCount,
         characterId: state.characterId,
         ipadapterWeight: state.ipadapterWeight,
-        // Active jobs only (will be validated on rehydration)
+        // Active state (will be validated on rehydration)
+        variations: state.variations,
         activeJobs: state.activeJobs,
         jobHistory: state.jobHistory,
         currentPreset: state.currentPreset,
-        // Don't persist temporary state
-        // variations: [], // Don't persist - files expire after 10 minutes
+        // Don't persist UI state
         // isGenerating: false, // Always start fresh
         // selectedVariationId: null,
         // compareMode: false,
@@ -662,10 +664,34 @@ export const useGenerationStore = create<GenerationState>()(
         }
 
         // Clear old variations (they reference temporary files that expire)
-        // Variations are temporary - once saved as assets, they're in the project store
+        // Keep recent variations (within 10 minutes) so they still show in the grid
         if (state?.variations && state.variations.length > 0) {
-          console.log(`🖼️ Clearing ${state.variations.length} old variations (temporary files expire)`);
-          state.variations = [];
+          console.log(`🖼️ Validating ${state.variations.length} variations...`);
+
+          const validVariations = state.variations.filter((variation) => {
+            // If no createdAt (old data), remove it
+            if (!variation.createdAt) {
+              console.log(`❌ Variation ${variation.id} has no createdAt, removing`);
+              return false;
+            }
+
+            const variationAge = now - new Date(variation.createdAt).getTime();
+
+            // If older than 10 minutes, remove it (files likely expired)
+            if (variationAge > TEN_MINUTES) {
+              console.log(`❌ Variation ${variation.id} is ${Math.round(variationAge / 60000)} minutes old, removing`);
+              return false;
+            }
+
+            return true;
+          });
+
+          if (validVariations.length < state.variations.length) {
+            console.log(`🧹 Removed ${state.variations.length - validVariations.length} old variations, keeping ${validVariations.length}`);
+            state.variations = validVariations;
+          } else {
+            console.log(`✓ All ${validVariations.length} variations are recent`);
+          }
         }
 
         // Clear job history older than 10 minutes

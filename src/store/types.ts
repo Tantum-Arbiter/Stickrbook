@@ -199,6 +199,7 @@ export interface Variation {
   prompt: string;
   negativePrompt?: string;
   selected: boolean;
+  createdAt: string; // ISO timestamp for age-based cleanup
   batchName?: string; // Name of the generation batch for organization
   // Multi-view metadata
   pose?: string;

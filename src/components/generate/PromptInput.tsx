@@ -319,10 +319,18 @@ export function PromptInput({ className = '' }: PromptInputProps) {
       return;
     }
 
-    // For scenes, ask for a batch name to organize generations
+    // Ask for a batch name to organize generations
     let finalBatchName = batchName.trim();
-    if (mode === 'scene' && !finalBatchName) {
-      finalBatchName = window.prompt('Enter a name for this scene generation batch (for organization):') || '';
+    if (!finalBatchName) {
+      const promptText = mode === 'scene'
+        ? 'Enter a name for this scene generation batch (for organization):'
+        : mode === 'character'
+        ? 'Enter a name for this character batch (e.g., "Hero Poses", "Villain Angles"):'
+        : mode === 'object'
+        ? 'Enter a name for this object batch (e.g., "Magic Items", "Weapons"):'
+        : 'Enter a name for this generation batch:';
+
+      finalBatchName = window.prompt(promptText) || '';
     }
 
     try {
