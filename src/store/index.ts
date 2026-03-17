@@ -55,11 +55,25 @@ import { useUIStore } from './uiStore';
 
 /**
  * Hook to get the current project, book, and page
+ * Fixed to properly track ID changes for reactivity
  */
 export function useCurrentContext() {
-  const currentProject = useProjectsStore((s) => s.currentProject());
-  const currentBook = useProjectsStore((s) => s.currentBook());
-  const currentPage = useProjectsStore((s) => s.currentPage());
+  const currentProjectId = useProjectsStore((s) => s.currentProjectId);
+  const currentBookId = useProjectsStore((s) => s.currentBookId);
+  const currentPageId = useProjectsStore((s) => s.currentPageId);
+
+  const currentProject = useProjectsStore((s) =>
+    s.projects.find((p) => p.id === currentProjectId)
+  );
+  const currentBook = useProjectsStore((s) => {
+    const project = s.projects.find((p) => p.id === currentProjectId);
+    return project?.books.find((b) => b.id === currentBookId);
+  });
+  const currentPage = useProjectsStore((s) => {
+    const project = s.projects.find((p) => p.id === currentProjectId);
+    const book = project?.books.find((b) => b.id === currentBookId);
+    return book?.pages.find((p) => p.id === currentPageId);
+  });
 
   return { currentProject, currentBook, currentPage };
 }
@@ -130,12 +144,27 @@ export function useHistory() {
 
 /**
  * Hook for project management
+ * Fixed to properly track ID changes for reactivity
  */
 export function useProjects() {
   const projects = useProjectsStore((s) => s.projects);
-  const currentProject = useProjectsStore((s) => s.currentProject());
-  const currentBook = useProjectsStore((s) => s.currentBook());
-  const currentPage = useProjectsStore((s) => s.currentPage());
+  const currentProjectId = useProjectsStore((s) => s.currentProjectId);
+  const currentBookId = useProjectsStore((s) => s.currentBookId);
+  const currentPageId = useProjectsStore((s) => s.currentPageId);
+
+  const currentProject = useProjectsStore((s) =>
+    s.projects.find((p) => p.id === currentProjectId)
+  );
+  const currentBook = useProjectsStore((s) => {
+    const project = s.projects.find((p) => p.id === currentProjectId);
+    return project?.books.find((b) => b.id === currentBookId);
+  });
+  const currentPage = useProjectsStore((s) => {
+    const project = s.projects.find((p) => p.id === currentProjectId);
+    const book = project?.books.find((b) => b.id === currentBookId);
+    return book?.pages.find((p) => p.id === currentPageId);
+  });
+
   const isLoading = useProjectsStore((s) => s.isLoading);
   const error = useProjectsStore((s) => s.error);
   const loadProjects = useProjectsStore((s) => s.loadProjects);

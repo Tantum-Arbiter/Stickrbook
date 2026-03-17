@@ -23,7 +23,12 @@ export interface GeneratePanelProps {
 export function GeneratePanel({ className = '' }: GeneratePanelProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { variations, selectedVariationId, saveVariation } = useGenerationStore();
-  const currentBook = useProjectsStore((s) => s.currentBook());
+  // Fix reactivity: depend on currentBookId
+  const currentBookId = useProjectsStore((s) => s.currentBookId);
+  const currentBook = useProjectsStore((s) => {
+    const project = s.currentProject();
+    return project?.books.find((b) => b.id === currentBookId);
+  });
   const toast = useToast();
 
   const selectedVariation = variations.find((v) => v.id === selectedVariationId);

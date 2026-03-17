@@ -10,7 +10,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { Palette, FolderOpen } from 'lucide-react';
 
 // Domain components
-import { GeneratePanel, FloatingJobQueue } from './components/generate';
+import { GeneratePanel, JobStatusIcon } from './components/generate';
 import { EditPanel } from './components/editor';
 import { StoryPanel } from './components/story';
 import { SidebarContent } from './components/sidebar';
@@ -53,6 +53,7 @@ function App() {
           logo: <Palette size={24} />,
           actions: (
             <>
+              <JobStatusIcon />
               <Button variant="ghost" size="small">
                 Settings
               </Button>
@@ -108,9 +109,6 @@ function App() {
         {activeTab === 'edit' && <EditPanel />}
         {activeTab === 'story' && <StoryPanel />}
       </AppLayout>
-
-      {/* Floating Job Queue - Always visible when there are jobs */}
-      <FloatingJobQueue />
     </ToastProvider>
   );
 }

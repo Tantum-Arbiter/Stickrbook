@@ -264,7 +264,12 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     generateVariations,
   } = useGenerationStore();
 
-  const currentBook = useProjectsStore((s) => s.currentBook());
+  // Fix reactivity: depend on currentBookId, not the getter function
+  const currentBookId = useProjectsStore((s) => s.currentBookId);
+  const currentBook = useProjectsStore((s) => {
+    const project = s.currentProject();
+    return project?.books.find((b) => b.id === currentBookId);
+  });
   const characters = currentBook?.characters || [];
 
   // Local state for presets and selections
