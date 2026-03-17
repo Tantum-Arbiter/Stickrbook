@@ -383,6 +383,7 @@ export interface GenerationState {
   pollSingleJob: (jobId: string) => Promise<void>;
   pollJobs: () => Promise<void>;
   cancelJob: (id: string) => Promise<void>;
+  clearActiveJobs: () => void;
   clearJobHistory: () => void;
   resetGeneratingState: () => void;
 

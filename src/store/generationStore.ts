@@ -297,6 +297,15 @@ export const useGenerationStore = create<GenerationState>()(
     set({ variations: [], selectedVariationId: null });
   },
 
+  clearActiveJobs: () => {
+    // Clear all active jobs (useful for cleanup after refresh)
+    set({ activeJobs: [] });
+  },
+
+  clearJobHistory: () => {
+    set({ jobHistory: [] });
+  },
+
   saveVariation: async (id: string) => {
     const variation = get().variations.find((v) => v.id === id);
     if (!variation) throw new Error('Variation not found');
@@ -596,13 +605,42 @@ export const useGenerationStore = create<GenerationState>()(
       // Re-subscribe to active jobs on hydration
       onRehydrateStorage: () => (state) => {
         if (state?.activeJobs && state.activeJobs.length > 0) {
-          console.log(`Rehydrated ${state.activeJobs.length} active jobs, re-subscribing...`);
-          // Re-subscribe to all active jobs
+          console.log(`Rehydrated ${state.activeJobs.length} active jobs, validating...`);
+
+          // Clear jobs older than 10 minutes (backend job retention time)
+          const TEN_MINUTES = 10 * 60 * 1000;
+          const now = Date.now();
+          const validJobs: GenerationJob[] = [];
+          const expiredJobs: GenerationJob[] = [];
+
           state.activeJobs.forEach((job) => {
-            if (job.status === 'pending' || job.status === 'generating') {
-              state.subscribeToJob(job.id);
+            const jobAge = now - new Date(job.createdAt).getTime();
+
+            // If job is older than 10 minutes, it's likely expired from backend
+            if (jobAge > TEN_MINUTES) {
+              console.log(`Job ${job.id} is ${Math.round(jobAge / 60000)} minutes old, removing`);
+              expiredJobs.push(job);
+            } else if (job.status === 'complete' || job.status === 'completed') {
+              // Completed jobs should be in variations, not active jobs
+              console.log(`Job ${job.id} is complete, removing from active jobs`);
+              expiredJobs.push(job);
+            } else {
+              // Job is recent and still active, keep it
+              validJobs.push(job);
+
+              // Re-subscribe if still generating
+              if (job.status === 'pending' || job.status === 'generating') {
+                console.log(`Re-subscribing to job ${job.id}`);
+                state.subscribeToJob(job.id);
+              }
             }
           });
+
+          // Update state with only valid jobs
+          if (expiredJobs.length > 0) {
+            console.log(`Removed ${expiredJobs.length} expired/completed jobs`);
+            state.activeJobs = validJobs;
+          }
         }
       },
     }
