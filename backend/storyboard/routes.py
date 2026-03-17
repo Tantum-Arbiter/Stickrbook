@@ -805,9 +805,12 @@ async def select_variation(
 
     try:
         # Save image to disk using storage
+        logger.info(f"  Saving image to disk...")
         saved_pydantic = storage.save_asset(book_id, pydantic_asset, image_data)
+        logger.info(f"  Image saved: {saved_pydantic.filename}")
 
         # Create database asset record
+        logger.info(f"  Creating database record...")
         db_asset = db_models.Asset(
             id=saved_pydantic.id,
             book_id=book_id,
@@ -819,10 +822,15 @@ async def select_variation(
             prompt=job.inputs.prompt if job.inputs else "",
             seed=job.inputs.seed if job.inputs else 0
         )
+        logger.info(f"  Database model created, calling repos.assets.create...")
         db_asset = await repos.assets.create(db_asset)
+        logger.info(f"  Database record created successfully")
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
         logger.error(f"  ERROR saving asset: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to save asset: {str(e)}")
+        logger.error(f"  Full traceback:\n{error_trace}")
+        raise HTTPException(status_code=500, detail=f"Failed to save asset: {str(e)}\n{error_trace}")
 
     logger.info(f"  SUCCESS: Asset saved as {db_asset.id} ({asset_name})")
 
