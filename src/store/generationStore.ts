@@ -452,13 +452,14 @@ export const useGenerationStore = create<GenerationState>()(
       console.log('✅ [Regular save] Backend response:', result);
       const backendAsset = result.asset;
 
+      // Backend sends imagePath (camelCase) with proper URL, not image_path (snake_case)
       const asset: Asset = {
         id: backendAsset.id,
         name: backendAsset.name,
         assetType: backendAsset.asset_type || assetType,
         collection: backendAsset.collection,
-        imagePath: backendAsset.image_path || backendAsset.filename,
-        thumbnailPath: backendAsset.image_path || backendAsset.filename,
+        imagePath: backendAsset.imagePath || backendAsset.image_path || backendAsset.filename,
+        thumbnailPath: backendAsset.thumbnailPath || backendAsset.image_path || backendAsset.filename,
         hasTransparency: backendAsset.has_transparency !== undefined ? backendAsset.has_transparency : false,
         tags: backendAsset.tags || [],
         createdAt: new Date().toISOString(),

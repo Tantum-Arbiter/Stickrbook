@@ -198,11 +198,11 @@ function JobItem({ job, position, total, onCancel }: JobItemProps) {
           <div className="progress-bar">
             <div
               className="progress-fill"
-              style={{ width: `${(job.progress || 0) * 100}%` }}
+              style={{ width: `${job.progress || 0}%` }}
             />
           </div>
           <span className="progress-percentage">
-            {Math.round((job.progress || 0) * 100)}%
+            {Math.round(job.progress || 0)}%
           </span>
         </div>
       )}

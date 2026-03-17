@@ -627,7 +627,7 @@ function VariationCard({
             {isFailed ? 'Failed' : job.status === 'pending' ? 'Queued' : 'Generating'}
           </span>
           {job.progress > 0 && !isFailed && (
-            <span className="placeholder-progress">{Math.round(job.progress * 100)}%</span>
+            <span className="placeholder-progress">{Math.round(job.progress)}%</span>
           )}
           {isFailed && job.errorMessage && (
             <span
