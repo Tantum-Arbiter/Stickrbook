@@ -1,0 +1,155 @@
+/* ==============================================
+ * Page Timeline (Filmstrip) Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Page Timeline Container ========== */
+.page-timeline {
+  height: 120px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+/* ========== Timeline Add Page Button ========== */
+.timeline-add-page {
+  width: 80px;
+  height: 90px;
+  background: var(--bg-card);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-base);
+}
+
+.timeline-add-page:hover {
+  border-color: var(--accent);
+  background: var(--border);
+}
+
+.timeline-add-page span {
+  font-size: 24px;
+}
+
+.timeline-add-page small {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ========== Timeline Page Card ========== */
+.timeline-page {
+  width: 100px;
+  height: 90px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.timeline-page:hover {
+  border-color: var(--border);
+  transform: translateY(-2px);
+}
+
+.timeline-page.active {
+  border-color: var(--accent);
+}
+
+.timeline-page.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.timeline-page.drag-over {
+  border-color: var(--brand-teal);
+  box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
+}
+
+.timeline-page img {
+  width: 100%;
+  height: 70px;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* ========== Timeline Page Info ========== */
+.timeline-page-info {
+  padding: 4px 8px;
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timeline-page-number {
+  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* ========== Timeline Page Status ========== */
+.timeline-page-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.timeline-page-status.complete {
+  background: var(--success);
+}
+
+.timeline-page-status.pending {
+  background: var(--text-muted);
+}
+
+.timeline-page-status.generating {
+  background: var(--warning);
+}
+
+/* ========== Timeline Label ========== */
+.timeline-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+/* ========== Timeline Drag Handle ========== */
+.timeline-page-drag-handle {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 4px;
+  background: var(--text-muted);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.timeline-page:hover .timeline-page-drag-handle {
+  opacity: 0.6;
+}
+

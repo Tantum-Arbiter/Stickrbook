@@ -1,0 +1,80 @@
+/* ==============================================
+ * Header Layout Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Header Container ========== */
+header,
+.header {
+  background: var(--bg-panel);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ========== Logo ========== */
+.logo {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+}
+
+.logo i,
+.logo svg {
+  color: var(--brand-teal);
+}
+
+.logo span {
+  color: var(--brand-teal);
+  font-weight: 700;
+}
+
+/* ========== Header Actions ========== */
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ========== Status Bar ========== */
+.status-bar {
+  padding: 8px 20px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.status-jobs {
+  display: flex;
+  gap: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-dot.running {
+  background: var(--warning);
+}
+
+.status-dot.complete {
+  background: var(--success);
+}
+
+.status-dot.error {
+  background: var(--error);
+}
+

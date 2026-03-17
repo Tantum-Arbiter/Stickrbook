@@ -1,0 +1,305 @@
+/* ==============================================
+ * Generation Panel Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Generation Mode Selector ========== */
+.generation-modes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.generation-mode {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.generation-mode:hover {
+  border-color: var(--brand-teal);
+  color: var(--text);
+  transform: none;
+  box-shadow: none;
+}
+
+.generation-mode.active {
+  background: rgba(78, 205, 196, 0.15);
+  border-color: var(--brand-teal);
+  color: var(--brand-teal);
+}
+
+.generation-mode svg,
+.generation-mode [data-lucide] {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== Mode Content ========== */
+.mode-content {
+  display: none;
+}
+
+.mode-content.active {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ========== Template Guidance ========== */
+.template-guidance {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid var(--brand-teal);
+  margin-bottom: 8px;
+}
+
+.template-guidance h4 {
+  font-size: var(--font-size-sm);
+  color: var(--brand-teal);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.template-guidance p {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ========== Preset Row ========== */
+.preset-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preset-row select {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+}
+
+.preset-row select:hover {
+  border-color: var(--brand-teal);
+}
+
+/* ========== Auto Generate Button ========== */
+.auto-gen-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.auto-gen-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+}
+
+.auto-gen-btn:active {
+  transform: translateY(0);
+}
+
+.auto-gen-btn.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.auto-gen-btn.loading svg,
+.auto-gen-btn.loading [data-lucide] {
+  animation: spin 1s linear infinite;
+}
+
+/* ========== Template Fields ========== */
+.template-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.template-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.template-field label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.template-field input,
+.template-field textarea {
+  font-size: var(--font-size-sm);
+  padding: 8px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.template-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ========== Mode Content (Always Visible) ========== */
+.mode-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* ========== Pose/Angle Grid ========== */
+.pose-selection-section,
+.angle-selection-section {
+  margin-top: 8px;
+}
+
+.pose-grid-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.pose-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.pose-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: var(--bg-dark);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pose-option:hover {
+  border-color: var(--brand-teal);
+  background: rgba(78, 205, 196, 0.05);
+  color: var(--text);
+}
+
+.pose-option.selected {
+  background: rgba(78, 205, 196, 0.15);
+  border-color: var(--brand-teal);
+  color: var(--brand-teal);
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.2);
+}
+
+.pose-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pose-hint {
+  margin-top: 8px;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ========== Character Reference ========== */
+.character-reference {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.char-ref-title {
+  font-size: var(--font-size-sm);
+  color: var(--brand-coral);
+  margin-bottom: 12px;
+}
+
+.ipadapter-weight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ipadapter-weight label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ipadapter-weight input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 4px;
+  outline: none;
+}
+
+.ipadapter-weight input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--brand-teal);
+  cursor: pointer;
+}
+
+.ipadapter-weight span {
+  font-size: var(--font-size-sm);
+  color: var(--text);
+  min-width: 40px;
+  text-align: right;
+}
+

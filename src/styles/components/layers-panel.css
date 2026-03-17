@@ -1,0 +1,299 @@
+/* ==============================================
+ * Layers Panel Component Styles
+ * Matches vanilla storyboard.html .layers-panel
+ * ============================================== */
+
+/* ========== Layers Panel ========== */
+.layers-panel {
+  position: relative;
+  width: 220px;
+  min-width: 150px;
+  max-width: 350px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+  /* Stretch to fill parent height */
+  align-self: stretch;
+}
+
+.layers-panel.collapsed {
+  width: 40px !important;
+  min-width: 40px !important;
+}
+
+.layers-panel.collapsed .layers-panel-content,
+.layers-panel.collapsed .layers-help-box,
+.layers-panel.collapsed .layer-list,
+.layers-panel.collapsed .layer-actions,
+.layers-panel.collapsed .layers-panel-header span {
+  display: none;
+}
+
+.layers-panel.collapsed .layers-panel-header {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  justify-content: flex-start;
+  padding: 12px 8px;
+  gap: 12px;
+}
+
+.layers-panel.collapsed .layers-panel-header h4 {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+}
+
+.layers-panel-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--bg-dark);
+}
+
+.layers-panel-header h4 {
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layers-panel-header .layer-count {
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.layers-panel-header .collapse-btn {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.layers-panel-header .collapse-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.layers-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* ========== Layers Help Box ========== */
+.layers-help-box {
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.layers-help-box p {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ========== Layer List ========== */
+.layer-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layer-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 48px;
+  text-align: center;
+}
+
+.layer-empty-state p {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* ========== Layer Item ========== */
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.layer-item:hover {
+  background: var(--border);
+}
+
+.layer-item.selected {
+  border-color: var(--accent);
+}
+
+.layer-item.hidden {
+  opacity: 0.5;
+}
+
+.layer-item.locked {
+  background: var(--bg-panel);
+}
+
+/* ========== Background Layer ========== */
+.layer-item.layer-background {
+  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-panel) 100%);
+  cursor: default;
+}
+
+.layer-item.layer-background:hover {
+  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-panel) 100%);
+}
+
+.layer-item.layer-was-background {
+  background: linear-gradient(135deg, rgba(90, 200, 250, 0.1) 0%, var(--bg-panel) 100%);
+  border-left: 3px solid var(--brand-teal);
+}
+
+.layer-item.layer-was-background .layer-name {
+  color: var(--brand-teal);
+}
+
+/* ========== Layer Thumbnail ========== */
+.layer-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.layer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ========== Layer Info ========== */
+.layer-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.layer-info .name,
+.layer-name {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layer-info .type,
+.layer-type {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ========== Layer Controls ========== */
+.layer-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.layer-btn {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.layer-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.layer-btn.active {
+  color: var(--brand-teal);
+}
+
+/* ========== Layer Actions ========== */
+.layer-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.layer-actions button {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.layer-actions button:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.layer-btn.delete:hover {
+  color: var(--error);
+}
+
+/* ========== Resize Handle ========== */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.resize-handle:hover {
+  background: var(--accent);
+}
+
+.resize-handle-left {
+  left: 0;
+}

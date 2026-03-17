@@ -1,0 +1,185 @@
+/* ==============================================
+ * Tabs Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Tabs Container ========== */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-dark);
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+
+/* ========== Individual Tab ========== */
+.tab {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+}
+
+.tab svg,
+.tab [data-lucide] {
+  width: 16px;
+  height: 16px;
+}
+
+.tab:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.tab.active {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: var(--shadow-tab);
+}
+
+/* ========== Tab Panel ========== */
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ========== Vertical Tabs ========== */
+.tabs--vertical {
+  flex-direction: column;
+}
+
+.tabs--vertical .tab {
+  justify-content: flex-start;
+}
+
+/* ========== Compact Tabs ========== */
+.tabs--compact {
+  gap: 2px;
+  padding: 2px;
+}
+
+.tabs--compact .tab {
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+  gap: 6px;
+}
+
+.tabs--compact .tab svg,
+.tabs--compact .tab [data-lucide] {
+  width: 12px;
+  height: 12px;
+}
+
+/* ========== Sidebar Asset Tabs ========== */
+.sidebar-asset-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-dark);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.sidebar-asset-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-muted);
+}
+
+.sidebar-asset-tab:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.sidebar-asset-tab.active {
+  background: var(--brand-teal);
+  color: white;
+}
+
+.sidebar-asset-tab svg,
+.sidebar-asset-tab [data-lucide] {
+  width: 10px;
+  height: 10px;
+}
+
+.asset-count {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* ========== Page Tabs (Editor) ========== */
+.page-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.page-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.page-tab:hover {
+  background: var(--border);
+}
+
+.page-tab.active {
+  background: var(--brand-teal);
+  border-color: var(--brand-teal);
+  color: white;
+}
+
+.page-tab-close {
+  margin-left: 4px;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.page-tab-close:hover {
+  opacity: 1;
+}
+
+.page-tab-add {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+}
+
+.page-tab-add:hover {
+  background: var(--bg-card);
+  border-color: var(--brand-teal);
+  color: var(--brand-teal);
+}
+

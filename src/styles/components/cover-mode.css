@@ -1,0 +1,148 @@
+/* ==============================================
+ * Cover Mode Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Cover Mode Panel ========== */
+.cover-mode {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cover-mode.active {
+  display: flex;
+}
+
+/* ========== Cover Preview Container ========== */
+.cover-preview-container {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.cover-preview {
+  flex: 2;
+  background: var(--bg-card);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-preview-page {
+  max-width: 90%;
+  max-height: 90%;
+  position: relative;
+}
+
+.cover-preview-page img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== Cover Editor Panel ========== */
+.cover-editor-panel {
+  flex: 1;
+  background: var(--bg-panel);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+.cover-editor-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cover-editor-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.cover-prompt-input {
+  flex: 1;
+  resize: none;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100px;
+}
+
+/* ========== Cover Style Selector ========== */
+.cover-style-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cover-style-option {
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.cover-style-option.active {
+  border-color: var(--accent);
+}
+
+.cover-style-option:hover {
+  background: var(--border);
+}
+
+/* ========== Cover Variations Grid ========== */
+.cover-variations {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.cover-variation-thumb {
+  aspect-ratio: 3/4;
+  background: var(--bg-card);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.cover-variation-thumb:hover {
+  transform: scale(1.02);
+}
+
+.cover-variation-thumb.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.cover-variation-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+

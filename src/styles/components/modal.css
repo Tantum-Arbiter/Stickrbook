@@ -1,0 +1,178 @@
+/* ==============================================
+ * Modal Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Overlay ========== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+/* ========== Modal Container ========== */
+.modal {
+  background: var(--bg-panel);
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+  animation: scaleIn var(--transition-base) ease-out;
+}
+
+/* Wider modal variant */
+.modal--wide {
+  max-width: 700px;
+}
+
+/* Full-screen modal variant */
+.modal--fullscreen {
+  max-width: 95vw;
+  max-height: 95vh;
+  width: 95vw;
+  height: 95vh;
+}
+
+/* ========== Modal Header ========== */
+.modal h2 {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-xl);
+}
+
+.modal h2 svg,
+.modal h2 [data-lucide] {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== Modal Body ========== */
+.modal-body {
+  margin-bottom: 24px;
+}
+
+/* ========== Modal Actions ========== */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+/* ========== Image Preview Modal ========== */
+.preview-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  cursor: zoom-out;
+}
+
+.preview-modal-overlay.open {
+  display: flex;
+}
+
+.preview-modal-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* ========== Quick Save Modal ========== */
+.quick-save-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  min-width: 320px;
+  max-width: 400px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+  z-index: var(--z-modal);
+  animation: scaleIn var(--transition-base) ease-out;
+}
+
+.quick-save-modal h3 {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========== Keyboard Shortcuts Modal ========== */
+.shortcuts-modal {
+  max-width: 500px;
+}
+
+.shortcuts-modal h3 {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shortcut-keys kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--text);
+}
+
+.shortcut-keys .or {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+

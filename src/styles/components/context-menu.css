@@ -1,0 +1,83 @@
+/* ==============================================
+ * Context Menu Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Context Menu Container ========== */
+.context-menu {
+  position: fixed;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  min-width: 160px;
+  z-index: var(--z-modal);
+  display: none;
+  padding: 4px 0;
+}
+
+.context-menu.open {
+  display: block;
+}
+
+/* ========== Context Menu Item ========== */
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  color: var(--text);
+}
+
+.context-menu-item:hover {
+  background: var(--bg-card);
+}
+
+.context-menu-item svg,
+.context-menu-item [data-lucide] {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+/* ========== Danger Item ========== */
+.context-menu-item.danger {
+  color: var(--error);
+}
+
+.context-menu-item.danger svg,
+.context-menu-item.danger [data-lucide] {
+  color: var(--error);
+}
+
+/* ========== Divider ========== */
+.context-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ========== Submenu Arrow ========== */
+.context-menu-item .submenu-arrow {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+/* ========== Disabled State ========== */
+.context-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ========== Keyboard Hint ========== */
+.context-menu-item .shortcut {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+

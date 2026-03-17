@@ -1,0 +1,96 @@
+/* ==============================================
+ * Grow with Freya - Storyboard Creator
+ * Main CSS Entry Point
+ * ============================================== */
+
+/* ========== Core Styles ========== */
+@import './variables.css';
+@import './base.css';
+@import './animations.css';
+
+/* ========== Layout Styles ========== */
+@import './layout/header.css';
+@import './layout/sidebar.css';
+@import './layout/workspace.css';
+
+/* ========== UI Component Styles ========== */
+@import './components/button.css';
+@import './components/input.css';
+@import './components/modal.css';
+@import './components/tabs.css';
+@import './components/toast.css';
+@import './components/context-menu.css';
+@import './components/project-tree.css';
+@import './components/asset-grid.css';
+@import './components/generation-panel.css';
+@import './components/variation-grid.css';
+@import './components/progress-overlay.css';
+@import './components/editor-canvas.css';
+@import './components/layers-panel.css';
+@import './components/story-mode.css';
+@import './components/cover-mode.css';
+@import './components/page-timeline.css';
+
+/* ========== Lucide Icon Alignment ========== */
+/* Global icon styling for consistent alignment */
+[data-lucide] {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+button [data-lucide],
+a [data-lucide],
+h2 [data-lucide],
+h3 [data-lucide],
+h4 [data-lucide],
+span [data-lucide],
+.tab [data-lucide],
+.btn [data-lucide] {
+  width: 16px;
+  height: 16px;
+}
+
+/* ========== Base App Layout ========== */
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========== Test Card (Development) ========== */
+.test-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+.test-card h2 {
+  margin-bottom: 1rem;
+  color: var(--accent);
+}
+
+.test-card p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.test-card button {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.test-card button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+

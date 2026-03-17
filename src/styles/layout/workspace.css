@@ -1,0 +1,1271 @@
+/* ==============================================
+ * Workspace Layout Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Workspace Container ========== */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ========== Main Container ========== */
+.main-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ========== Content Area ========== */
+.content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ========== Toolbar ========== */
+.toolbar {
+  padding: 12px 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 8px;
+}
+
+/* ========== Generation Panel ========== */
+.generation-panel {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+}
+
+/* ========== Generate Panel (New Layout) ========== */
+.generate-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.generate-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.generate-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.generate-controls-panel {
+  width: 320px;
+  min-width: 280px;
+  max-width: 400px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.generate-controls-panel .panel-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.generate-controls-panel .panel-section.collapsible {
+  padding: 0;
+}
+
+.generate-controls-panel .section-header {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.generate-controls-panel .section-header:hover {
+  background: var(--bg-card);
+}
+
+.generate-controls-panel .section-content {
+  padding: 0 16px 16px;
+}
+
+.generate-controls-panel .chevron {
+  transition: transform var(--transition-fast);
+}
+
+.generate-controls-panel .chevron.open {
+  transform: rotate(180deg);
+}
+
+.generate-status {
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+
+.selected-variation-info {
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+
+.selected-variation-info .info-row {
+  display: flex;
+  gap: 16px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.selected-variation-info .info-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========== Production Editor (Edit Panel) ========== */
+.production-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-darker);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ========== Editor Toolbar ========== */
+.editor-toolbar {
+  padding: 12px 16px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.editor-tool-group {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  align-items: center;
+}
+
+.editor-tool {
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-primary);
+  transition: all 0.15s;
+}
+
+.editor-tool:hover {
+  background: var(--bg-card);
+}
+
+.editor-tool.active {
+  background: var(--accent);
+}
+
+.editor-tool:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* ========== Paint Controls ========== */
+.paint-controls {
+  gap: 8px;
+  padding: 4px 8px;
+}
+
+.paint-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.paint-color-swatch:hover {
+  border-color: var(--accent);
+}
+
+.brush-size-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brush-size-control label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.brush-size-control input[type="range"] {
+  width: 60px;
+  height: 4px;
+}
+
+.brush-size-value {
+  font-size: 10px;
+  color: var(--text-muted);
+  min-width: 30px;
+}
+
+.color-palette {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  max-width: 120px;
+}
+
+.palette-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: transform 0.1s;
+}
+
+.palette-color:hover {
+  transform: scale(1.2);
+}
+
+.editor-action-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.15s;
+}
+
+.editor-action-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+/* ========== Page Tabs Bar ========== */
+.editor-page-tabs {
+  display: flex;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  padding: 0 12px;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.page-tabs-container {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.page-tab {
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all var(--transition-fast);
+  gap: 2px;
+  transition: all 0.15s;
+}
+
+.page-tab:hover {
+  background: var(--bg-hover);
+}
+
+.page-tab.active {
+  background: var(--bg-darker);
+  border-color: var(--accent);
+  margin-bottom: -1px;
+  padding-bottom: 9px;
+}
+
+.page-tab-name {
+  font-weight: 500;
+}
+
+.page-tab-size {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.page-tab-add {
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.page-tab-add:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.page-tab-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ========== Editor Main Area ========== */
+.editor-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.editor-canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.editor-canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--bg-darker);
+  overflow: hidden;
+}
+
+.editor-canvas-wrapper {
+  position: relative;
+}
+
+/* ========== Editor Placeholder ========== */
+.editor-placeholder {
+  text-align: center;
+  color: var(--text-muted);
+  max-width: 400px;
+  padding: 32px;
+}
+
+.placeholder-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.placeholder-title {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.placeholder-subtitle {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.placeholder-steps {
+  text-align: left;
+  padding-left: 24px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.placeholder-hint {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* ========== Editor Info Bar ========== */
+.editor-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--bg-darker);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  min-height: 36px;
+}
+
+.composition-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.composition-controls label {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.composition-controls select {
+  padding: 3px 6px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+  font-size: 10px;
+}
+
+.info-spacer {
+  flex: 1;
+}
+
+.shortcuts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcuts-btn:hover {
+  color: var(--text-primary);
+}
+
+.shortcuts-btn kbd {
+  padding: 2px 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+/* Legacy compatibility */
+.edit-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.edit-right-panel .section-toggle {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.edit-right-panel .section-toggle:hover {
+  background: var(--bg-panel);
+}
+
+.edit-right-panel .section-toggle.collapsed {
+  color: var(--text-muted);
+}
+
+.edit-right-panel .effects-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.edit-status-bar {
+  padding: 8px 16px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.edit-status-bar .status-info {
+  display: flex;
+  gap: 16px;
+}
+
+.edit-status-bar .selection-info {
+  color: var(--brand-teal);
+}
+
+/* ========== Panel Card ========== */
+.panel-card {
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+
+.panel-card h3 {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-md);
+}
+
+/* ========== Right Panel (Effects) ========== */
+.right-panel {
+  position: relative;
+  width: var(--right-panel-width);
+  min-width: var(--right-panel-min-width);
+  max-width: var(--right-panel-max-width);
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.right-panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.right-panel-header h3 {
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.right-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* ========== Section Resize Handle ========== */
+.section-resize-handle {
+  height: 6px;
+  background: var(--border);
+  cursor: ns-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.section-resize-handle:hover,
+.section-resize-handle.dragging {
+  background: var(--brand-teal);
+}
+
+.section-resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 2px;
+  background: var(--text-muted);
+  border-radius: 1px;
+  opacity: 0.5;
+}
+
+.section-resize-handle:hover::after {
+  opacity: 1;
+  background: white;
+}
+
+/* ========== Zoom Controls ========== */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.zoom-controls.compact {
+  gap: 6px;
+  padding: 2px 6px;
+}
+
+.zoom-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.zoom-btn svg {
+  flex-shrink: 0;
+}
+
+.zoom-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-level {
+  font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+  font-size: 11px;
+  color: var(--text-primary);
+  min-width: 42px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.zoom-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.zoom-slider {
+  width: 80px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-darker);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand-teal);
+  cursor: pointer;
+}
+
+.zoom-presets {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border);
+}
+
+.zoom-preset {
+  padding: 3px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.zoom-preset:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.zoom-preset.active {
+  background: var(--brand-teal);
+  color: white;
+}
+
+.zoom-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border);
+}
+
+/* NOTE: .effects-panel main styles are at end of file with collapsible panel section */
+
+.effects-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* No selection message - shown above controls */
+.effects-no-selection {
+  text-align: center;
+  padding: 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.effects-no-selection p {
+  margin: 0;
+}
+
+.effects-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Disabled state for controls */
+.effects-controls.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.effects-controls.disabled .reset-btn,
+.effects-controls.disabled .effect-slider input {
+  cursor: not-allowed;
+}
+
+.effect-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.effect-slider.disabled {
+  opacity: 0.6;
+}
+
+.effect-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.effect-value {
+  font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 11px;
+}
+
+.effect-slider input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-card);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.effect-slider input[type="range"]:disabled {
+  cursor: not-allowed;
+}
+
+.effect-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand-teal);
+  cursor: pointer;
+}
+
+.effect-slider input[type="range"]:disabled::-webkit-slider-thumb {
+  background: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ========== Layer Action Buttons ========== */
+.layer-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.layer-action-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+/* ========== Color Wheel ========== */
+.color-wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.color-wheel-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.color-wheel-canvas {
+  border-radius: 50%;
+  cursor: crosshair;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-wheel-canvas.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.color-wheel-pointer {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.1s;
+}
+
+.color-wheel-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.hex-color-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hex-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: #FF0000;
+}
+
+.hex-color-input {
+  width: 80px;
+  padding: 4px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+}
+
+.hex-color-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== Effects Groups ========== */
+.effects-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.effects-group {
+  background: var(--bg-card);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.effects-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background var(--transition-fast);
+}
+
+.effects-group-header:hover {
+  background: var(--bg-hover);
+}
+
+.effects-group-header .group-chevron {
+  transition: transform var(--transition-fast);
+}
+
+.effects-group.collapsed .group-chevron {
+  transform: rotate(-90deg);
+}
+
+.effects-group-content {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.effects-group.collapsed .effects-group-content {
+  display: none;
+}
+
+.reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.reset-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ========== Effects Panel (Collapsible) ========== */
+.effects-panel {
+  position: relative;
+  width: 200px;
+  min-width: 150px;
+  max-width: 300px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+  /* Stretch to fill parent height */
+  align-self: stretch;
+}
+
+.effects-panel.collapsed {
+  width: 40px !important;
+  min-width: 40px !important;
+}
+
+.effects-panel.collapsed .effects-panel-content,
+.effects-panel.collapsed .effects-panel-header span {
+  display: none;
+}
+
+.effects-panel.collapsed .resize-handle {
+  opacity: 0.5;
+}
+
+.effects-panel.collapsed .resize-handle:hover {
+  opacity: 1;
+  background: var(--brand-teal);
+}
+
+.effects-panel.collapsed .effects-panel-header {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  justify-content: flex-start;
+  padding: 12px 8px;
+  gap: 12px;
+}
+
+.effects-panel.collapsed .effects-panel-header h4 {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  margin: 0;
+  font-size: 11px;
+}
+
+.effects-panel-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--bg-dark);
+}
+
+.effects-panel-header h4 {
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.effects-panel-header .collapse-btn {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.effects-panel-header .collapse-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.effects-panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.effects-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.effects-toolbar .reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.effects-toolbar .reset-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Effects Groups */
+.effects-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.effects-group {
+  background: var(--bg-card);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.effects-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.effects-group-header:hover {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+}
+
+.effects-group-header .group-title {
+  flex: 1;
+}
+
+.effects-group-header .group-chevron {
+  transition: transform 0.2s;
+}
+
+.effects-group.collapsed .group-chevron {
+  transform: rotate(-90deg);
+}
+
+.effects-group-content {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Color Wheel Container */
+.color-wheel-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+/* Hex Color Input Row */
+.hex-color-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hex-color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.hex-color-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
+  background: var(--bg-darker);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.hex-color-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

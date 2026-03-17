@@ -1,0 +1,189 @@
+/* ==============================================
+ * Progress Overlay Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Progress Overlay ========== */
+.progress-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 12px;
+  gap: 16px;
+  padding: 20px;
+}
+
+.progress-overlay.hidden {
+  display: none;
+}
+
+.progress-phase {
+  color: var(--brand-teal);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* ========== Progress Bar ========== */
+.progress-bar-container {
+  width: 80%;
+  max-width: 300px;
+  height: 8px;
+  background: var(--bg-dark);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-teal), var(--brand-blue));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-percent {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.progress-queue {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin-top: 8px;
+}
+
+/* ========== Progress Jobs ========== */
+.progress-jobs {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.progress-job-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.progress-job-item .job-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.progress-job-item.pending .job-indicator {
+  background: var(--text-muted);
+}
+
+.progress-job-item.running .job-indicator {
+  background: var(--brand-teal);
+  animation: pulse 1s infinite;
+}
+
+.progress-job-item.complete .job-indicator {
+  background: var(--success);
+}
+
+.progress-job-item.failed .job-indicator {
+  background: var(--error);
+}
+
+/* ========== Bottom Progress Bar (Floating) ========== */
+.bottom-progress-bar {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  width: auto;
+  max-width: 600px;
+  min-width: 400px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(20, 20, 28, 0.98), rgba(15, 15, 22, 0.98));
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: var(--z-modal);
+  transition: transform var(--transition-slow), opacity var(--transition-slow);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  opacity: 0;
+}
+
+.bottom-progress-bar.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.bottom-progress-bar .progress-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.bottom-progress-bar .progress-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-teal);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.bottom-progress-bar .progress-text {
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+}
+
+.bottom-progress-bar .progress-text strong {
+  color: var(--brand-teal);
+}
+
+.bottom-progress-bar .progress-timer {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  color: var(--brand-teal);
+  background: rgba(78, 205, 196, 0.15);
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.bottom-progress-bar .progress-jobs-mini {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.bottom-progress-bar .job-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-dark);
+  border: 2px solid var(--text-muted);
+  transition: all var(--transition-slow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+

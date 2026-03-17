@@ -1,0 +1,169 @@
+/* ==============================================
+ * Editor Canvas Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Canvas Container ========== */
+.canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.editor-canvas-with-layers {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+
+.editor-canvas-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+}
+
+.editor-canvas-wrapper.panning {
+  cursor: grabbing !important;
+  transition: none;
+}
+
+/* ========== Canvas Element (Draggable Objects) ========== */
+.canvas-element {
+  position: absolute;
+  cursor: move;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  transition: border-color var(--transition-fast);
+}
+
+.canvas-element:hover,
+.canvas-element.selected {
+  border-color: var(--accent);
+}
+
+.canvas-element img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* ========== Resize Handles ========== */
+.canvas-element .resize-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border: 2px solid var(--brand-blue);
+  border-radius: 3px;
+  cursor: nwse-resize;
+  opacity: 1;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.canvas-element .resize-handle:hover {
+  background: var(--brand-blue);
+  transform: scale(1.2);
+}
+
+.canvas-element:hover .resize-handle,
+.canvas-element.selected .resize-handle {
+  opacity: 1;
+}
+
+.canvas-element .resize-handle.br {
+  bottom: -7px;
+  right: -7px;
+  cursor: nwse-resize;
+}
+
+.canvas-element .resize-handle.tl {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.canvas-element .resize-handle.tr {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.canvas-element .resize-handle.bl {
+  bottom: -7px;
+  left: -7px;
+  cursor: nesw-resize;
+}
+
+/* ========== Delete Button ========== */
+.canvas-element .delete-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  background: var(--error);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: opacity var(--transition-fast);
+}
+
+.canvas-element:hover .delete-btn,
+.canvas-element.selected .delete-btn {
+  opacity: 1;
+}
+
+/* ========== Pixelated Rendering ========== */
+.editor-canvas-wrapper.pixelated #editorCanvas,
+.editor-canvas-wrapper.pixelated #paintCanvas,
+.editor-canvas-wrapper.pixelated #pixelGridCanvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* ========== Drag Preview ========== */
+.drag-preview {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2000;
+  opacity: 0.8;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+

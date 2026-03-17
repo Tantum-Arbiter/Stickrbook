@@ -1,0 +1,579 @@
+/**
+ * PromptInput Component
+ *
+ * Text input area with prompt, negative prompt, workflow type, presets, poses, and character selector.
+ * Uses extracted CSS from legacy storyboard.
+ */
+
+import { useState, type ReactNode } from 'react';
+import { useGenerationStore, useProjectsStore } from '../../store';
+import { Textarea } from '../ui/Textarea';
+import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
+import type { GenerationMode, WorkflowType } from '../../store/types';
+import {
+  Clapperboard, User, Package, PencilLine, Palette, TreePine, Bed, Umbrella, Castle,
+  Fish, Star, Flower2, Snowflake, Rabbit, Cat, Bird, Sparkles, Drama, Mouse, Baby, Bot,
+  Gem, Wand2, Armchair, Cherry, Cake, Train, BookOpen, CircleDot,
+  PersonStanding, Sofa, Footprints, Zap, Hand, Move, Moon, Pointer, Music, Brain, PartyPopper,
+  ArrowUp, ArrowRight, ArrowDown, ArrowUpRight, UserRound, ArrowDownRight, Ruler, Eye,
+  Camera, ChevronUp, ChevronDown, Frame, Maximize2, Search, Mountain, BirdIcon, Sliders,
+  Sun, Sunrise, Sunset, CloudSun, CloudMoon, Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning,
+  Smile, Heart, Compass, Home, Theater, Rocket
+} from 'lucide-react';
+
+// Icon component type for rendering
+type IconComponent = typeof Clapperboard;
+
+// Generation mode options
+const GENERATION_MODES: Array<{ value: GenerationMode; label: string; Icon: IconComponent }> = [
+  { value: 'scene', label: 'Scene', Icon: Clapperboard },
+  { value: 'character', label: 'Character', Icon: User },
+  { value: 'object', label: 'Object', Icon: Package },
+  { value: 'sketch', label: 'Sketch', Icon: PencilLine },
+];
+
+// Workflow type options (matches vanilla version)
+const WORKFLOW_TYPES: Array<{ value: WorkflowType; label: string }> = [
+  { value: 'full_page', label: 'Full Page (Single Pass)' },
+  { value: 'ipadapter', label: 'IP-Adapter (Character Conditioned)' },
+  { value: 'character_ref', label: 'Character Reference Sheet' },
+  { value: 'background', label: 'Background Only' },
+];
+
+// Scene presets (from legacy storyboard.html)
+const SCENE_PRESETS: Record<string, { label: string; background: string; camera: string; time: string; weather: string; space: string; mood: string; details: string }> = {
+  forest_adventure: { label: 'Forest Adventure', background: 'enchanted forest with tall trees and dappled sunlight, winding path through ancient woods', camera: 'eye_level', time: 'golden_hour', weather: 'magical', space: 'center_open', mood: 'magical', details: 'glowing mushrooms, fireflies, mossy stones, wildflowers' },
+  cozy_bedroom: { label: 'Cozy Bedroom', background: 'warm cozy bedroom with soft blankets, window seat, and soft lamplight', camera: 'medium_shot', time: 'dusk', weather: 'clear', space: 'center_open', mood: 'cozy', details: 'stuffed animals on bed, picture books, twinkling fairy lights, soft rug' },
+  sunny_beach: { label: 'Sunny Beach', background: 'sparkling sandy beach with gentle turquoise waves and distant horizon', camera: 'wide_shot', time: 'day', weather: 'sunny', space: 'foreground_open', mood: 'happy', details: 'seashells, beach umbrella, sandcastle, palm trees' },
+  magical_castle: { label: 'Magical Castle', background: 'majestic fairy tale castle on a hill with towers and gardens', camera: 'establishing', time: 'sunset', weather: 'magical', space: 'center_open', mood: 'magical', details: 'fluttering banners, rose garden, stone bridge, stained glass windows' },
+  underwater_world: { label: 'Underwater World', background: 'vibrant coral reef underwater kingdom with colorful coral formations', camera: 'medium_shot', time: 'day', weather: 'clear', space: 'multiple_spaces', mood: 'magical', details: 'coral formations, sea plants, bubbles, sunbeams through water' },
+  starry_night: { label: 'Starry Night Sky', background: 'peaceful hilltop meadow under vast starry sky with milky way', camera: 'wide_shot', time: 'night', weather: 'clear', space: 'foreground_open', mood: 'peaceful', details: 'wildflowers, fireflies, distant mountains, shooting stars' },
+  garden_party: { label: 'Garden Party', background: 'beautiful flower garden with white gazebo and stone pathways', camera: 'eye_level', time: 'golden_hour', weather: 'sunny', space: 'multiple_spaces', mood: 'happy', details: 'tea table setup, flower garlands, butterflies, hanging lanterns' },
+  snowy_mountain: { label: 'Snowy Mountain', background: 'snow-covered mountain meadow with frosted pine trees', camera: 'wide_shot', time: 'dawn', weather: 'snowy', space: 'center_open', mood: 'peaceful', details: 'snowflakes, icicles, frozen stream, cozy cabin in distance' },
+};
+
+// Character presets (from legacy storyboard.html)
+const CHARACTER_PRESETS: Record<string, { label: string; description: string; name: string; type: string; expression: string; pose: string }> = {
+  friendly_bunny: { label: 'Friendly Bunny', description: 'a soft fluffy white rabbit with long floppy ears, pink nose, and big curious eyes', name: 'Whiskers', type: 'animal', expression: 'friendly and curious', pose: 'front' },
+  brave_fox: { label: 'Brave Fox', description: 'a clever orange fox with a bushy tail and bright amber eyes, wearing a small green cape', name: 'Felix', type: 'animal', expression: 'confident and adventurous', pose: 'threequarter' },
+  wise_owl: { label: 'Wise Owl', description: 'a round fluffy owl with big spectacles, soft brown and cream feathers', name: 'Professor Hoot', type: 'animal', expression: 'wise and kind', pose: 'front' },
+  playful_kitten: { label: 'Playful Kitten', description: 'an adorable tabby kitten with a bell collar, striped fur, and playful green eyes', name: 'Mittens', type: 'animal', expression: 'playful and mischievous', pose: 'action' },
+  tiny_dragon: { label: 'Tiny Dragon', description: 'a small friendly dragon with iridescent scales, tiny wings, and a curled tail', name: 'Spark', type: 'fantasy', expression: 'excited and happy', pose: 'threequarter' },
+  curious_mouse: { label: 'Curious Mouse', description: 'a tiny brown mouse with round ears, wearing a red polka-dot dress', name: 'Pip', type: 'animal', expression: 'curious and shy', pose: 'front' },
+  little_explorer: { label: 'Little Explorer', description: 'a cheerful child with curly hair, freckles, wearing overalls and a backpack', name: 'Luna', type: 'human', expression: 'adventurous and determined', pose: 'threequarter' },
+  friendly_robot: { label: 'Friendly Robot', description: 'a cute rounded robot with glowing blue eyes, antenna, and small wheels', name: 'Beep', type: 'robot', expression: 'helpful and cheerful', pose: 'front' },
+};
+
+// Object presets (from legacy storyboard.html)
+const OBJECT_PRESETS: Record<string, { label: string; description: string; category: string; angle: string }> = {
+  treasure_chest: { label: 'Treasure Chest', description: 'an ornate wooden treasure chest with golden hinges, ruby-encrusted lock, overflowing with gold coins and jewels', category: 'magical', angle: 'threequarter' },
+  magic_wand: { label: 'Magic Wand', description: 'an elegant fairy wand with a star tip, trailing sparkles and magical dust', category: 'magical', angle: 'front' },
+  cozy_armchair: { label: 'Cozy Armchair', description: 'a plush velvet armchair in deep purple, with tasseled cushions and carved wooden feet', category: 'furniture', angle: 'threequarter' },
+  flowering_tree: { label: 'Flowering Tree', description: 'a whimsical cherry blossom tree with pink petals floating in the breeze', category: 'nature', angle: 'front' },
+  birthday_cake: { label: 'Birthday Cake', description: 'a three-tier birthday cake with rainbow frosting, sprinkles, and glowing candles', category: 'food', angle: 'threequarter' },
+  toy_train: { label: 'Toy Train', description: 'a colorful wooden toy train with red engine, blue carriages, and spinning wheels', category: 'toy', angle: 'side' },
+  enchanted_book: { label: 'Enchanted Book', description: 'an ancient leather-bound spellbook with glowing runes, floating pages, and magical sparkles', category: 'magical', angle: 'threequarter' },
+  crystal_ball: { label: 'Crystal Ball', description: 'a mystical crystal ball on an ornate bronze stand, swirling with purple mist inside', category: 'magical', angle: 'front' },
+};
+
+// Character poses (what the character is DOING)
+const CHARACTER_POSES: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'standing', Icon: PersonStanding, label: 'Standing' },
+  { value: 'sitting', Icon: Sofa, label: 'Sitting' },
+  { value: 'walking', Icon: Footprints, label: 'Walking' },
+  { value: 'running', Icon: Zap, label: 'Running' },
+  { value: 'waving', Icon: Hand, label: 'Waving' },
+  { value: 'jumping', Icon: Move, label: 'Jumping' },
+  { value: 'sleeping', Icon: Moon, label: 'Sleeping' },
+  { value: 'reading', Icon: BookOpen, label: 'Reading' },
+  { value: 'pointing', Icon: Pointer, label: 'Pointing' },
+  { value: 'dancing', Icon: Music, label: 'Dancing' },
+  { value: 'thinking', Icon: Brain, label: 'Thinking' },
+  { value: 'cheering', Icon: PartyPopper, label: 'Cheering' },
+];
+
+// Character/Object view angles (orientation - how we SEE them)
+const VIEW_ANGLES: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'front', Icon: ArrowUp, label: 'Front View' },
+  { value: 'side', Icon: ArrowRight, label: 'Side View' },
+  { value: 'back', Icon: ArrowDown, label: 'Back View' },
+  { value: 'threequarter', Icon: ArrowUpRight, label: '3/4 View' },
+  { value: 'profile', Icon: UserRound, label: 'Profile' },
+];
+
+// Object-specific angles (includes more technical views)
+const OBJECT_ANGLES: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'front', Icon: ArrowUp, label: 'Front View' },
+  { value: 'side', Icon: ArrowRight, label: 'Side View' },
+  { value: 'back', Icon: ArrowDown, label: 'Back View' },
+  { value: 'threequarter', Icon: ArrowDownRight, label: '3/4 View' },
+  { value: 'topdown', Icon: ChevronDown, label: 'Top Down' },
+  { value: 'isometric', Icon: Ruler, label: 'Isometric' },
+  { value: 'worms_eye', Icon: Eye, label: 'Worm\'s Eye' },
+];
+
+// Scene camera angles (cinematic framing for full scenes)
+const CAMERA_ANGLES: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'eye_level', Icon: Eye, label: 'Eye Level (Child\'s View)' },
+  { value: 'low_angle', Icon: ChevronUp, label: 'Low Angle (Looking Up)' },
+  { value: 'high_angle', Icon: ChevronDown, label: 'High Angle (Looking Down)' },
+  { value: 'wide_shot', Icon: Frame, label: 'Wide Shot (Full Scene)' },
+  { value: 'medium_shot', Icon: Sliders, label: 'Medium Shot (Balanced)' },
+  { value: 'close_up', Icon: Search, label: 'Close Up (Detail Focus)' },
+  { value: 'establishing', Icon: Mountain, label: 'Establishing Shot (Big Picture)' },
+  { value: 'birds_eye', Icon: BirdIcon, label: 'Bird\'s Eye View' },
+  { value: 'dutch_angle', Icon: Camera, label: 'Dutch Angle (Tilted)' },
+];
+
+// Time of day options
+const TIME_OF_DAY: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'day', Icon: Sun, label: 'Daytime' },
+  { value: 'golden_hour', Icon: Sunrise, label: 'Golden Hour' },
+  { value: 'sunset', Icon: Sunset, label: 'Sunset' },
+  { value: 'dusk', Icon: CloudSun, label: 'Dusk/Twilight' },
+  { value: 'night', Icon: Moon, label: 'Night' },
+  { value: 'dawn', Icon: Sunrise, label: 'Dawn' },
+  { value: 'overcast', Icon: Cloud, label: 'Overcast/Cloudy' },
+];
+
+// Weather options
+const WEATHER_OPTIONS: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'clear', Icon: Sparkles, label: 'Clear & Bright' },
+  { value: 'sunny', Icon: Sun, label: 'Sunny' },
+  { value: 'cloudy', Icon: CloudSun, label: 'Partly Cloudy' },
+  { value: 'rainy', Icon: CloudRain, label: 'Rainy' },
+  { value: 'snowy', Icon: CloudSnow, label: 'Snowy' },
+  { value: 'foggy', Icon: CloudFog, label: 'Misty/Foggy' },
+  { value: 'magical', Icon: Sparkles, label: 'Magical Sparkles' },
+  { value: 'stormy', Icon: CloudLightning, label: 'Stormy' },
+];
+
+// Mood options
+const MOOD_OPTIONS: Array<{ value: string; Icon: IconComponent; label: string }> = [
+  { value: 'happy', Icon: Smile, label: 'Happy & Cheerful' },
+  { value: 'peaceful', Icon: Heart, label: 'Peaceful & Calm' },
+  { value: 'magical', Icon: Sparkles, label: 'Magical & Wonderous' },
+  { value: 'adventurous', Icon: Compass, label: 'Adventurous & Exciting' },
+  { value: 'cozy', Icon: Home, label: 'Cozy & Warm' },
+  { value: 'mysterious', Icon: Star, label: 'Mysterious' },
+  { value: 'playful', Icon: PartyPopper, label: 'Playful & Fun' },
+  { value: 'dramatic', Icon: Theater, label: 'Dramatic' },
+];
+
+export interface PromptInputProps {
+  className?: string;
+}
+
+export function PromptInput({ className = '' }: PromptInputProps) {
+  const {
+    mode,
+    workflowType,
+    prompt,
+    negativePrompt,
+    characterId,
+    ipadapterWeight,
+    isGenerating,
+    setMode,
+    setWorkflowType,
+    setPrompt,
+    setNegativePrompt,
+    setCharacter,
+    generateVariations,
+  } = useGenerationStore();
+
+  const currentBook = useProjectsStore((s) => s.currentBook());
+  const characters = currentBook?.characters || [];
+
+  // Local state for presets and selections
+  const [selectedPoses, setSelectedPoses] = useState<string[]>(['standing']);
+  const [selectedViewAngles, setSelectedViewAngles] = useState<string[]>(['front']);
+  const [selectedObjectAngles, setSelectedObjectAngles] = useState<string[]>(['front']);
+  const [sceneSettings, setSceneSettings] = useState({
+    background: '',
+    camera: 'eye_level',
+    time: 'day',
+    weather: 'clear',
+    mood: 'happy',
+    details: '',
+  });
+
+  const handleGenerate = () => {
+    if (!prompt.trim()) return;
+    generateVariations();
+  };
+
+  const handleScenePresetChange = (presetKey: string) => {
+    if (!presetKey) return;
+    const preset = SCENE_PRESETS[presetKey];
+    if (!preset) return;
+    setSceneSettings({
+      background: preset.background,
+      camera: preset.camera,
+      time: preset.time,
+      weather: preset.weather,
+      mood: preset.mood,
+      details: preset.details,
+    });
+    // Build prompt from preset
+    const newPrompt = `${preset.background}, ${preset.details}`;
+    setPrompt(newPrompt);
+  };
+
+  const handleCharacterPresetChange = (presetKey: string) => {
+    if (!presetKey) return;
+    const preset = CHARACTER_PRESETS[presetKey];
+    if (!preset) return;
+    const newPrompt = `${preset.description}, ${preset.expression}, isolated on transparent background`;
+    setPrompt(newPrompt);
+  };
+
+  const handleObjectPresetChange = (presetKey: string) => {
+    if (!presetKey) return;
+    const preset = OBJECT_PRESETS[presetKey];
+    if (!preset) return;
+    const newPrompt = `${preset.description}, isolated on transparent background`;
+    setPrompt(newPrompt);
+  };
+
+  const togglePose = (pose: string) => {
+    setSelectedPoses((prev) =>
+      prev.includes(pose) ? prev.filter((p) => p !== pose) : [...prev, pose]
+    );
+  };
+
+  const toggleViewAngle = (angle: string) => {
+    setSelectedViewAngles((prev) =>
+      prev.includes(angle) ? prev.filter((a) => a !== angle) : [...prev, angle]
+    );
+  };
+
+  const toggleObjectAngle = (angle: string) => {
+    setSelectedObjectAngles((prev) =>
+      prev.includes(angle) ? prev.filter((a) => a !== angle) : [...prev, angle]
+    );
+  };
+
+  return (
+    <div className={`prompt-input ${className}`}>
+      {/* Generation Mode Selector */}
+      <div className="generation-modes">
+        {GENERATION_MODES.map((m) => (
+          <button
+            key={m.value}
+            className={`generation-mode ${mode === m.value ? 'active' : ''}`}
+            onClick={() => setMode(m.value)}
+            disabled={isGenerating}
+          >
+            <m.Icon size={16} />
+            <span>{m.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Workflow Type Dropdown */}
+      <Select
+        label="Workflow Type"
+        value={workflowType}
+        onChange={(e) => setWorkflowType(e.target.value as WorkflowType)}
+        disabled={isGenerating}
+      >
+        {WORKFLOW_TYPES.map((wf) => (
+          <option key={wf.value} value={wf.value}>
+            {wf.label}
+          </option>
+        ))}
+      </Select>
+
+      {/* Template Guidance (mode-specific) */}
+      <div className="template-guidance">
+        <h4>{getGuidanceTitle(mode)}</h4>
+        <p>{getGuidanceText(mode)}</p>
+      </div>
+
+      {/* === SCENE MODE === */}
+      {mode === 'scene' && (
+        <div className="mode-content scene-mode">
+          <div className="preset-row">
+            <Select
+              label="Scene Preset"
+              onChange={(e) => handleScenePresetChange(e.target.value)}
+              disabled={isGenerating}
+            >
+              <option value="">— Choose a preset —</option>
+              {Object.entries(SCENE_PRESETS).map(([key, preset]) => (
+                <option key={key} value={key}>{preset.label}</option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => {
+                const keys = Object.keys(SCENE_PRESETS);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                handleScenePresetChange(randomKey);
+              }}
+              disabled={isGenerating}
+            >
+              <Sparkles size={12} /> Surprise Me
+            </Button>
+          </div>
+          <div className="template-fields">
+            <Select
+              label="Camera Angle"
+              value={sceneSettings.camera}
+              onChange={(e) => setSceneSettings((s) => ({ ...s, camera: e.target.value }))}
+              disabled={isGenerating}
+            >
+              {CAMERA_ANGLES.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+            <Select
+              label="Time of Day"
+              value={sceneSettings.time}
+              onChange={(e) => setSceneSettings((s) => ({ ...s, time: e.target.value }))}
+              disabled={isGenerating}
+            >
+              {TIME_OF_DAY.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+            <Select
+              label="Weather"
+              value={sceneSettings.weather}
+              onChange={(e) => setSceneSettings((s) => ({ ...s, weather: e.target.value }))}
+              disabled={isGenerating}
+            >
+              {WEATHER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+            <Select
+              label="Mood"
+              value={sceneSettings.mood}
+              onChange={(e) => setSceneSettings((s) => ({ ...s, mood: e.target.value }))}
+              disabled={isGenerating}
+            >
+              {MOOD_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {/* === CHARACTER MODE === */}
+      {mode === 'character' && (
+        <div className="mode-content character-mode">
+          <div className="preset-row">
+            <Select
+              label="Character Preset"
+              onChange={(e) => handleCharacterPresetChange(e.target.value)}
+              disabled={isGenerating}
+            >
+              <option value="">— Choose a preset —</option>
+              {Object.entries(CHARACTER_PRESETS).map(([key, preset]) => (
+                <option key={key} value={key}>{preset.label}</option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => {
+                const keys = Object.keys(CHARACTER_PRESETS);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                handleCharacterPresetChange(randomKey);
+              }}
+              disabled={isGenerating}
+            >
+              <Sparkles size={12} /> Surprise Me
+            </Button>
+          </div>
+
+          {/* Pose Selection Grid - What the character is DOING */}
+          <div className="pose-selection-section">
+            <label className="pose-grid-label">Select Poses (What they're doing)</label>
+            <div className="pose-grid">
+              {CHARACTER_POSES.map((pose) => (
+                <div
+                  key={pose.value}
+                  className={`pose-option ${selectedPoses.includes(pose.value) ? 'selected' : ''}`}
+                  onClick={() => togglePose(pose.value)}
+                >
+                  <div className="pose-icon"><pose.Icon size={16} /></div>
+                  <span>{pose.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* View Angle Selection Grid - How we SEE the character */}
+          <div className="angle-selection-section">
+            <label className="pose-grid-label">Select View Angles (How we see them)</label>
+            <div className="pose-grid">
+              {VIEW_ANGLES.map((angle) => (
+                <div
+                  key={angle.value}
+                  className={`pose-option ${selectedViewAngles.includes(angle.value) ? 'selected' : ''}`}
+                  onClick={() => toggleViewAngle(angle.value)}
+                >
+                  <div className="pose-icon"><angle.Icon size={16} /></div>
+                  <span>{angle.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="pose-hint">Select pose + view angle combinations. Each combination generates separately with transparent background.</p>
+          </div>
+        </div>
+      )}
+
+      {/* === OBJECT MODE === */}
+      {mode === 'object' && (
+        <div className="mode-content object-mode">
+          <div className="preset-row">
+            <Select
+              label="Object Preset"
+              onChange={(e) => handleObjectPresetChange(e.target.value)}
+              disabled={isGenerating}
+            >
+              <option value="">— Choose a preset —</option>
+              {Object.entries(OBJECT_PRESETS).map(([key, preset]) => (
+                <option key={key} value={key}>{preset.label}</option>
+              ))}
+            </Select>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => {
+                const keys = Object.keys(OBJECT_PRESETS);
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                handleObjectPresetChange(randomKey);
+              }}
+              disabled={isGenerating}
+            >
+              <Sparkles size={12} /> Surprise Me
+            </Button>
+          </div>
+
+          {/* Object Angle Selection Grid */}
+          <div className="angle-selection-section">
+            <label className="pose-grid-label">Select View Angles</label>
+            <div className="pose-grid">
+              {OBJECT_ANGLES.map((angle) => (
+                <div
+                  key={angle.value}
+                  className={`pose-option ${selectedObjectAngles.includes(angle.value) ? 'selected' : ''}`}
+                  onClick={() => toggleObjectAngle(angle.value)}
+                >
+                  <div className="pose-icon"><angle.Icon size={16} /></div>
+                  <span>{angle.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="pose-hint">Click angles to select/deselect. Each generates with transparent background.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Input */}
+      <Textarea
+        label="Prompt"
+        placeholder="Describe the scene you want to generate..."
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        rows={4}
+        disabled={isGenerating}
+      />
+
+      {/* Negative Prompt */}
+      <Textarea
+        label="Negative Prompt"
+        placeholder="Elements to avoid..."
+        value={negativePrompt}
+        onChange={(e) => setNegativePrompt(e.target.value)}
+        rows={2}
+        disabled={isGenerating}
+      />
+
+      {/* Character Reference Section (shown for IP-Adapter workflow or scene/character modes) */}
+      {(workflowType === 'ipadapter' || ((mode === 'scene' || mode === 'character') && characters.length > 0)) && (
+        <div className="character-reference">
+          <h4 className="char-ref-title"><Drama size={14} /> Character Reference</h4>
+
+          {characters.length > 0 && (
+            <Select
+              label="Select Character"
+              value={characterId || ''}
+              onChange={(e) => setCharacter(e.target.value || null)}
+              disabled={isGenerating}
+            >
+              <option value="">None (or upload below)</option>
+              {characters.map((char) => (
+                <option key={char.id} value={char.id}>
+                  {char.name}
+                </option>
+              ))}
+            </Select>
+          )}
+
+          {/* IP-Adapter Weight (always show when workflow is ipadapter or when character is selected) */}
+          {(workflowType === 'ipadapter' || characterId) && (
+            <div className="ipadapter-weight">
+              <label>IP-Adapter Weight</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={ipadapterWeight}
+                onChange={(e) => setCharacter(characterId, parseFloat(e.target.value))}
+                disabled={isGenerating}
+              />
+              <span>{ipadapterWeight.toFixed(2)}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Generate Button */}
+      <Button
+        variant="primary"
+        size="large"
+        className={`auto-gen-btn ${isGenerating ? 'loading' : ''}`}
+        onClick={handleGenerate}
+        disabled={isGenerating || !prompt.trim()}
+        loading={isGenerating}
+      >
+        {isGenerating ? 'Generating...' : <><Rocket size={14} /> Generate Variations</>}
+      </Button>
+    </div>
+  );
+}
+
+// Helper functions for mode-specific guidance
+function getGuidanceTitle(mode: GenerationMode): string {
+  switch (mode) {
+    case 'scene': return 'Scene Generation';
+    case 'character': return 'Character Generation';
+    case 'object': return 'Object Generation';
+    case 'sketch': return 'Sketch Mode';
+    default: return 'Generation';
+  }
+}
+
+function getGuidanceText(mode: GenerationMode): string {
+  switch (mode) {
+    case 'scene':
+      return 'Generate full scenes with backgrounds and characters. Use character references for consistency.';
+    case 'character':
+      return 'Generate isolated characters on transparent backgrounds. Perfect for creating reusable assets.';
+    case 'object':
+      return 'Generate objects and props on transparent backgrounds. Useful for scene composition.';
+    case 'sketch':
+      return 'Generate sketch-style illustrations. Great for storyboard planning and rough layouts.';
+    default:
+      return 'Enter a prompt and generate variations.';
+  }
+}
+

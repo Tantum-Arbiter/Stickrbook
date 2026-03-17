@@ -1,0 +1,138 @@
+/* ==============================================
+ * Story Mode Component Styles
+ * Extracted from storyboard.html
+ * ============================================== */
+
+/* ========== Story Mode Panel ========== */
+.story-mode {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.story-mode.active {
+  display: flex;
+}
+
+/* ========== Story Preview Container ========== */
+.story-preview-container {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.story-preview {
+  flex: 2;
+  background: var(--bg-card);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.story-preview-page {
+  max-width: 90%;
+  max-height: 90%;
+  position: relative;
+}
+
+.story-preview-page img {
+  max-width: 100%;
+  max-height: 60vh;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== Story Text Overlay ========== */
+.story-text-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 24px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  border-radius: 0 0 8px 8px;
+}
+
+.story-text-display {
+  font-size: 18px;
+  line-height: 1.6;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ========== Story Editor Panel ========== */
+.story-editor-panel {
+  flex: 1;
+  background: var(--bg-panel);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.story-editor-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.story-editor-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.story-text-input {
+  flex: 1;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 150px;
+}
+
+/* ========== Story Navigation ========== */
+.story-nav-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.story-nav-buttons button {
+  flex: 1;
+}
+
+/* ========== Layout Selector ========== */
+.layout-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.layout-option {
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  border: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.layout-option.active {
+  border-color: var(--accent);
+}
+
+.layout-option:hover {
+  background: var(--border);
+}
+
