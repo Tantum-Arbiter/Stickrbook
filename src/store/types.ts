@@ -382,6 +382,7 @@ export interface GenerationState {
   pollJobs: () => Promise<void>;
   cancelJob: (id: string) => Promise<void>;
   clearJobHistory: () => void;
+  resetGeneratingState: () => void;
 
   // Preset actions
   loadPreset: (preset: GenerationPreset) => void;

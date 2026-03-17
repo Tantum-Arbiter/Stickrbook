@@ -123,8 +123,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // Generation actions
   generateVariations: async () => {
     const state = get();
-    // Remove blocking check - allow queueing multiple batches
-    // if (state.isGenerating) return;
+    // Don't block if already generating - just prevent double submission
+    if (state.isGenerating) {
+      console.log('Already submitting, please wait...');
+      return;
+    }
 
     // Get current book from projects store
     const currentBook = useProjectsStore.getState().currentBook();
@@ -164,22 +167,21 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         createdAt: new Date().toISOString(),
       }));
 
-      set((s) => ({
-        activeJobs: [...s.activeJobs, ...jobs],
-        // Don't clear variations - keep accumulating results
-        // variations: [],
-        // selectedVariationId: null,
-        // compareSelection: [],
-        isGenerating: false, // Unlock immediately after submission
-      }));
-
       // Subscribe to SSE for each job (they will run sequentially on backend)
       jobs.forEach((job) => {
         get().subscribeToJob(job.id);
       });
+
+      set((s) => ({
+        activeJobs: [...s.activeJobs, ...jobs],
+        // Don't clear variations - keep accumulating results
+        isGenerating: false, // Unlock immediately after submission
+      }));
     } catch (error) {
       const message = error instanceof ApiClientError ? error.detail || error.message : 'Generation failed';
       console.error('Generation failed:', message);
+
+      // Always unlock on error
       set({ isGenerating: false });
 
       // Re-throw with user-friendly message
@@ -193,8 +195,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // Multi-view generation (for characters/objects with multiple poses/angles)
   generateMultiView: async (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => {
     const state = get();
-    // Remove blocking check - allow queueing multiple batches
-    // if (state.isGenerating) return;
+    // Don't block if already generating - just prevent double submission
+    if (state.isGenerating) {
+      console.log('Already submitting, please wait...');
+      return;
+    }
 
     const currentBook = useProjectsStore.getState().currentBook();
     if (!currentBook) {
@@ -250,18 +255,20 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         allJobs.push(...jobs);
       }
 
-      set((s) => ({
-        activeJobs: [...s.activeJobs, ...allJobs],
-        isGenerating: false, // Unlock immediately after submission
-      }));
-
       // Subscribe to SSE for each job
       allJobs.forEach((job) => {
         get().subscribeToJob(job.id);
       });
+
+      set((s) => ({
+        activeJobs: [...s.activeJobs, ...allJobs],
+        isGenerating: false, // Unlock immediately after submission
+      }));
     } catch (error) {
       const message = error instanceof ApiClientError ? error.detail || error.message : 'Generation failed';
       console.error('Multi-view generation failed:', message);
+
+      // Always unlock on error
       set({ isGenerating: false });
 
       if (error instanceof ApiClientError && error.status === 0) {
@@ -480,6 +487,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
   clearJobHistory: () => {
     set({ jobHistory: [] });
+  },
+
+  resetGeneratingState: () => {
+    console.log('Manually resetting isGenerating state');
+    set({ isGenerating: false });
   },
 
   // Preset actions

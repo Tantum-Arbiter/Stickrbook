@@ -5,7 +5,7 @@
  * Uses extracted CSS from legacy storyboard.
  */
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useGenerationStore, useProjectsStore } from '../../store';
 import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
@@ -264,6 +264,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     setVariationCount,
     generateVariations,
     generateMultiView,
+    resetGeneratingState,
   } = useGenerationStore();
 
   // Fix reactivity: depend on currentBookId, not the getter function
@@ -272,6 +273,17 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     const project = s.currentProject();
     return project?.books.find((b) => b.id === currentBookId);
   });
+
+  // Auto-reset isGenerating if it gets stuck (safety mechanism)
+  useEffect(() => {
+    if (isGenerating) {
+      const timeout = setTimeout(() => {
+        console.warn('isGenerating stuck for >5s, auto-resetting');
+        resetGeneratingState();
+      }, 5000); // 5 second timeout
+      return () => clearTimeout(timeout);
+    }
+  }, [isGenerating, resetGeneratingState]);
   const characters = currentBook?.characters || [];
 
   // Local state for presets and selections
