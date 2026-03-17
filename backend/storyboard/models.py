@@ -159,6 +159,9 @@ class VariationRequest(BaseModel):
     character_prompt: Optional[str] = None  # Character definition to inject (only for character mode)
     num_variations: int = 4  # Number of variations to generate (1-12)
     pose_name: Optional[str] = None  # Name of pose for pose-based generation
+    view_angle: Optional[str] = None  # View angle for multi-view generation
+    pose_label: Optional[str] = None  # Human-readable pose label
+    view_angle_label: Optional[str] = None  # Human-readable view angle label
 
 
 class VariationResponse(BaseModel):

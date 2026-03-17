@@ -599,17 +599,24 @@ empty scene, no characters, no people, no animals, environment only, background 
     elif mode == GenerationMode.CHARACTER:
         # CHARACTER: Isolated character on simple/transparent background
         char_desc = request.character_prompt or ""
+        # Add pose and view angle to prompt if provided
+        pose_desc = f"{request.pose_name} pose, " if request.pose_name else ""
+        view_desc = f"{request.view_angle} view, " if request.view_angle else ""
         full_prompt = f"""STYLE: {book.art_style}
 {request.prompt}
 {char_desc}
+{pose_desc}{view_desc}
 {book.reference_prompt}
 character design, isolated character, simple gradient background, transparent background style, clean edges, full body, centered, single character, white background, no environment, no scene"""
         negative = (request.negative_prompt or book.negative_prompt) + ", busy background, complex background, scenery, environment, multiple characters, group, crowd"
 
     elif mode == GenerationMode.OBJECT:
         # OBJECT/PROP: Isolated object on simple/transparent background
+        # Add view angle to prompt if provided
+        view_desc = f"{request.view_angle} view, " if request.view_angle else ""
         full_prompt = f"""STYLE: {book.art_style}
 {request.prompt}
+{view_desc}
 {book.reference_prompt}
 single object, isolated prop, transparent background, game asset style, clean edges, centered, white background, no environment, no characters, no people, product shot, clean silhouette"""
         negative = (request.negative_prompt or book.negative_prompt) + ", busy background, complex background, scenery, environment, characters, people, hands, person holding"
@@ -677,7 +684,10 @@ single object, isolated prop, transparent background, game asset style, clean ed
                 "workspace_date": session_date,
                 "workspace_index": i,
                 "generation_mode": mode.value,  # Track mode for correct asset saving
-                "pose_name": request.pose_name  # For pose-based generation
+                "pose_name": request.pose_name,  # For pose-based generation
+                "view_angle": request.view_angle,  # For multi-view generation
+                "pose_label": request.pose_label,  # Human-readable labels
+                "view_angle_label": request.view_angle_label
             }
         ))
         await _job_queue.submit(job)

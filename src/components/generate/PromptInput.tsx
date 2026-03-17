@@ -262,6 +262,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     setCharacter,
     setVariationCount,
     generateVariations,
+    generateMultiView,
   } = useGenerationStore();
 
   // Fix reactivity: depend on currentBookId, not the getter function
@@ -305,7 +306,37 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     }
 
     try {
-      await generateVariations();
+      // For characters and objects, use multi-view generation if multiple poses/angles are selected
+      if (mode === 'character' && (selectedPoses.length > 1 || selectedViewAngles.length > 1)) {
+        // Generate all combinations of poses and view angles
+        const viewConfigs = [];
+        for (const pose of selectedPoses) {
+          for (const viewAngle of selectedViewAngles) {
+            const poseData = CHARACTER_POSES.find(p => p.value === pose);
+            const angleData = VIEW_ANGLES.find(a => a.value === viewAngle);
+            viewConfigs.push({
+              pose,
+              viewAngle,
+              poseLabel: poseData?.label || pose,
+              viewAngleLabel: angleData?.label || viewAngle,
+            });
+          }
+        }
+        await generateMultiView(viewConfigs);
+      } else if (mode === 'object' && selectedObjectAngles.length > 1) {
+        // Generate for each object angle
+        const viewConfigs = selectedObjectAngles.map(angle => {
+          const angleData = OBJECT_ANGLES.find(a => a.value === angle);
+          return {
+            viewAngle: angle,
+            viewAngleLabel: angleData?.label || angle,
+          };
+        });
+        await generateMultiView(viewConfigs);
+      } else {
+        // Standard single-batch generation for scenes or single pose/angle
+        await generateVariations();
+      }
     } catch (error) {
       console.error('Generation error:', error);
       alert('Failed to generate images. Please check that the backend server is running and try again.');

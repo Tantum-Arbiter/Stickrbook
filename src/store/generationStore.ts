@@ -186,6 +186,84 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     }
   },
 
+  // Multi-view generation (for characters/objects with multiple poses/angles)
+  generateMultiView: async (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => {
+    const state = get();
+    if (state.isGenerating) return;
+
+    const currentBook = useProjectsStore.getState().currentBook();
+    if (!currentBook) {
+      console.error('No book selected for generation');
+      throw new Error('No book selected. Please create or select a book first.');
+    }
+
+    set({ isGenerating: true, variations: [], selectedVariationId: null, compareSelection: [] });
+
+    try {
+      const allJobs: GenerationJob[] = [];
+
+      // Submit a batch for each view configuration
+      for (const config of viewConfigs) {
+        const response = await generationApi.submitVariations(currentBook.id, {
+          prompt: state.prompt,
+          negative_prompt: state.negativePrompt,
+          base_seed: state.seed || undefined,
+          width: state.width,
+          height: state.height,
+          generation_mode: state.mode,
+          num_variations: state.variationCount,
+          character_prompt: state.characterId || undefined,
+          pose_name: config.pose,
+          view_angle: config.viewAngle,
+          pose_label: config.poseLabel,
+          view_angle_label: config.viewAngleLabel,
+        });
+
+        // Create jobs from response with metadata
+        const jobs: GenerationJob[] = response.job_ids.map((jobId: string, idx: number) => ({
+          id: jobId,
+          jobType: state.mode,
+          status: 'pending' as const,
+          prompt: state.prompt,
+          negativePrompt: state.negativePrompt,
+          seed: response.seeds?.[idx] ?? null,
+          steps: state.steps,
+          cfgScale: state.cfgScale,
+          width: state.width,
+          height: state.height,
+          progress: 0,
+          createdAt: new Date().toISOString(),
+          metadata: {
+            pose: config.pose,
+            viewAngle: config.viewAngle,
+            poseLabel: config.poseLabel,
+            viewAngleLabel: config.viewAngleLabel,
+          },
+        }));
+
+        allJobs.push(...jobs);
+      }
+
+      set((s) => ({
+        activeJobs: [...s.activeJobs, ...allJobs],
+      }));
+
+      // Subscribe to SSE for each job
+      allJobs.forEach((job) => {
+        get().subscribeToJob(job.id);
+      });
+    } catch (error) {
+      const message = error instanceof ApiClientError ? error.detail || error.message : 'Generation failed';
+      console.error('Multi-view generation failed:', message);
+      set({ isGenerating: false });
+
+      if (error instanceof ApiClientError && error.status === 0) {
+        throw new Error('Cannot connect to the backend server. Please ensure the server is running at the configured address.');
+      }
+      throw error;
+    }
+  },
+
   selectVariation: (id: string) => {
     set((state) => ({
       selectedVariationId: id,
@@ -261,7 +339,13 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
               imagePath: output.download_url || `/v1/files/${output.file_id}`,
               thumbnailPath: output.download_url || `/v1/files/${output.file_id}`,
               prompt: job.prompt || '',
+              negativePrompt: job.negativePrompt,
               selected: false,
+              // Include multi-view metadata if present
+              pose: job.metadata?.pose,
+              viewAngle: job.metadata?.viewAngle,
+              poseLabel: job.metadata?.poseLabel,
+              viewAngleLabel: job.metadata?.viewAngleLabel,
             };
 
             set((state) => ({
@@ -320,7 +404,13 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             imagePath: output.download_url || `/v1/files/${output.file_id}`,
             thumbnailPath: output.download_url || `/v1/files/${output.file_id}`,
             prompt: job.prompt || '',
+            negativePrompt: job.negativePrompt,
             selected: false,
+            // Include multi-view metadata if present
+            pose: job.metadata?.pose,
+            viewAngle: job.metadata?.viewAngle,
+            poseLabel: job.metadata?.poseLabel,
+            viewAngleLabel: job.metadata?.viewAngleLabel,
           };
 
           set((state) => ({

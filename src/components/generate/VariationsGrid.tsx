@@ -223,38 +223,117 @@ export function VariationsGrid({
         </div>
       )}
 
-      {/* Variations Grid - Responsive and Scrollable */}
-      <div
-        className={`variation-grid ${className}`}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`,
-          gap: totalSlots <= 3 ? '20px' : '16px',
-          maxHeight: 'calc(100vh - 300px)',
-          overflowY: totalSlots > 9 ? 'auto' : 'visible',
-          padding: '4px',
-          justifyContent: 'center',
-          alignItems: 'start',
-        }}
-      >
-        {slots.map(({ index, variation, job }) => (
-          <VariationCard
-            key={index}
-            index={index}
-            variation={variation}
-            job={job}
-            isSelected={variation?.id === selectedVariationId}
-            isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
-            compareMode={compareMode}
-            onSelect={handleSelect}
-            onSave={handleSave}
-            onEnlarge={handleEnlarge}
-            onVarySubtle={handleVarySubtle}
-            onVaryStrong={handleVaryStrong}
-            onRegenerate={handleRegenerate}
-          />
-        ))}
-      </div>
+      {/* Variations Grid - Grouped by Pose/Angle or Flat */}
+      {(() => {
+        // Group variations by pose/angle if they have metadata
+        const hasMultiView = variations.some(v => v.pose || v.viewAngle);
+
+        if (hasMultiView) {
+          // Group variations by their pose/angle combination
+          const groups = new Map<string, typeof slots>();
+          slots.forEach(slot => {
+            const { variation } = slot;
+            if (variation) {
+              const key = `${variation.pose || 'none'}_${variation.viewAngle || 'none'}`;
+              if (!groups.has(key)) {
+                groups.set(key, []);
+              }
+              groups.get(key)!.push(slot);
+            } else {
+              // Jobs without variations yet - add to a "pending" group
+              if (!groups.has('pending')) {
+                groups.set('pending', []);
+              }
+              groups.get('pending')!.push(slot);
+            }
+          });
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', padding: '4px' }}>
+              {Array.from(groups.entries()).map(([key, groupSlots]) => {
+                const firstVariation = groupSlots.find(s => s.variation)?.variation;
+                const label = firstVariation
+                  ? `${firstVariation.poseLabel || firstVariation.pose || ''} ${firstVariation.viewAngleLabel || firstVariation.viewAngle || ''}`.trim()
+                  : 'Generating...';
+
+                return (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 style={{
+                      fontSize: 'calc(var(--font-size-md) * 1.1)',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: 0,
+                      padding: '0 4px'
+                    }}>
+                      {label}
+                    </h3>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${Math.min(groupSlots.length, 4)}, 1fr)`,
+                        gap: '16px',
+                      }}
+                    >
+                      {groupSlots.map(({ index, variation, job }) => (
+                        <VariationCard
+                          key={index}
+                          index={index}
+                          variation={variation}
+                          job={job}
+                          isSelected={variation?.id === selectedVariationId}
+                          isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
+                          compareMode={compareMode}
+                          onSelect={handleSelect}
+                          onSave={handleSave}
+                          onEnlarge={handleEnlarge}
+                          onVarySubtle={handleVarySubtle}
+                          onVaryStrong={handleVaryStrong}
+                          onRegenerate={handleRegenerate}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        } else {
+          // Standard flat grid for single-view generations
+          return (
+            <div
+              className={`variation-grid ${className}`}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`,
+                gap: totalSlots <= 3 ? '20px' : '16px',
+                maxHeight: 'calc(100vh - 300px)',
+                overflowY: totalSlots > 9 ? 'auto' : 'visible',
+                padding: '4px',
+                justifyContent: 'center',
+                alignItems: 'start',
+              }}
+            >
+              {slots.map(({ index, variation, job }) => (
+                <VariationCard
+                  key={index}
+                  index={index}
+                  variation={variation}
+                  job={job}
+                  isSelected={variation?.id === selectedVariationId}
+                  isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
+                  compareMode={compareMode}
+                  onSelect={handleSelect}
+                  onSave={handleSave}
+                  onEnlarge={handleEnlarge}
+                  onVarySubtle={handleVarySubtle}
+                  onVaryStrong={handleVaryStrong}
+                  onRegenerate={handleRegenerate}
+                />
+              ))}
+            </div>
+          );
+        }
+      })()}
 
       {/* Image Preview Overlay */}
       {previewImage && (

@@ -151,6 +151,9 @@ export interface SubmitJobRequest {
   character_prompt?: string;
   num_variations?: number;
   pose_name?: string;
+  view_angle?: string;
+  pose_label?: string;
+  view_angle_label?: string;
 }
 
 export interface SubmitJobResponse {

@@ -175,6 +175,12 @@ export interface GenerationJob {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  metadata?: {
+    pose?: string;
+    viewAngle?: string;
+    poseLabel?: string;
+    viewAngleLabel?: string;
+  };
 }
 
 export interface JobOutput {
@@ -190,7 +196,13 @@ export interface Variation {
   imagePath: string;
   thumbnailPath?: string;
   prompt: string;
+  negativePrompt?: string;
   selected: boolean;
+  // Multi-view metadata
+  pose?: string;
+  viewAngle?: string;
+  poseLabel?: string;
+  viewAngleLabel?: string;
 }
 
 export interface GenerationPreset {
@@ -358,6 +370,7 @@ export interface GenerationState {
 
   // Generation actions
   generateVariations: () => Promise<void>;
+  generateMultiView: (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => Promise<void>;
   selectVariation: (id: string) => void;
   clearVariations: () => void;
   saveVariation: (id: string) => Promise<Asset>;
