@@ -204,6 +204,7 @@ export const useProjectsStore = create<ProjectState>((set, get) => ({
         projects: state.projects.map((p) =>
           p.id === projectId ? { ...p, books: [...p.books, book] } : p
         ),
+        currentProjectId: projectId, // Ensure the project is selected
         currentBookId: book.id,
         isLoading: false,
       }));
