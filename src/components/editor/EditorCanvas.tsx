@@ -259,6 +259,12 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
             src={baseImagePath}
             alt="Base"
             draggable={false}
+            onError={() => {
+              console.error('❌ [EditorCanvas] Failed to load base image:', baseImagePath);
+            }}
+            onLoad={() => {
+              console.log('✅ [EditorCanvas] Base image loaded successfully:', baseImagePath);
+            }}
             style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }}
           />
         )}
@@ -320,6 +326,20 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart, onResizeStart }:
   const asset = currentBook?.assets.find((a) => a.id === layer.assetId);
   const imagePath = asset?.imagePath || '';
 
+  // Debug logging
+  useEffect(() => {
+    if (asset) {
+      console.log('🖼️ [CanvasLayer] Asset found:', {
+        id: asset.id,
+        name: asset.name,
+        imagePath: asset.imagePath,
+        thumbnailPath: asset.thumbnailPath
+      });
+    } else {
+      console.warn('⚠️ [CanvasLayer] Asset not found for layer:', layer.assetId);
+    }
+  }, [asset, layer.assetId]);
+
   const style: React.CSSProperties = {
     position: 'absolute',
     left: layer.x,
@@ -365,6 +385,13 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart, onResizeStart }:
           src={imagePath}
           alt="Layer"
           draggable={false}
+          onError={(e) => {
+            console.error('❌ [CanvasLayer] Failed to load image:', imagePath);
+            console.error('Asset data:', asset);
+          }}
+          onLoad={() => {
+            console.log('✅ [CanvasLayer] Image loaded successfully:', imagePath);
+          }}
           style={{
             width: '100%',
             height: '100%',
@@ -384,9 +411,11 @@ function CanvasLayer({ layer, isSelected, onClick, onDragStart, onResizeStart }:
           justifyContent: 'center',
           userSelect: 'none',
           WebkitUserSelect: 'none',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          fontSize: '12px',
+          color: '#666'
         }}>
-          Layer
+          {asset ? asset.name : 'Layer'}
         </div>
       )}
 

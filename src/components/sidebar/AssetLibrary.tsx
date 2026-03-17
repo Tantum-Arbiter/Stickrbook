@@ -5,7 +5,7 @@
  * Uses extracted CSS from legacy storyboard (asset-grid.css).
  */
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useEffect } from 'react';
 import { useProjectsStore } from '../../store';
 import type { Asset, AssetType } from '../../store/types';
 import { Button } from '../ui/Button';
@@ -877,6 +877,18 @@ interface AssetThumbnailProps {
 }
 
 function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: AssetThumbnailProps) {
+  const imgSrc = asset.thumbnailPath || asset.imagePath;
+
+  useEffect(() => {
+    console.log('🖼️ [AssetThumbnail] Rendering asset:', {
+      id: asset.id,
+      name: asset.name,
+      imagePath: asset.imagePath,
+      thumbnailPath: asset.thumbnailPath,
+      usingSrc: imgSrc
+    });
+  }, [asset, imgSrc]);
+
   return (
     <div
       className="sidebar-asset-thumb"
@@ -910,9 +922,16 @@ function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: Ass
         </div>
       )}
       <img
-        src={asset.thumbnailPath || asset.imagePath}
+        src={imgSrc}
         alt={asset.name}
         loading="lazy"
+        onError={() => {
+          console.error('❌ [AssetThumbnail] Failed to load image:', imgSrc);
+          console.error('Asset data:', asset);
+        }}
+        onLoad={() => {
+          console.log('✅ [AssetThumbnail] Image loaded successfully:', imgSrc);
+        }}
       />
       <span className="asset-name-label">{asset.name}</span>
     </div>
