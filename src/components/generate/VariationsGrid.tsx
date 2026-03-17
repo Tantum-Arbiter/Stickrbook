@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { useGenerationStore } from '../../store';
+import { useGenerationStore, useUIStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
 import { GitCompare } from 'lucide-react';
@@ -39,6 +39,9 @@ export function VariationsGrid({
     clearCompareSelection,
   } = useGenerationStore();
 
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const activeTab = useUIStore((s) => s.activeTab);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
 
@@ -50,11 +53,13 @@ export function VariationsGrid({
     return { index, variation, job };
   });
 
-  // Determine grid columns based on number of items
+  // Determine grid columns based on number of items - more compact layout
   const getGridColumns = () => {
-    if (totalSlots <= 2) return 2;
-    if (totalSlots <= 4) return 2;
+    if (totalSlots === 1) return 1;
+    if (totalSlots === 2) return 2;
+    if (totalSlots === 3) return 3;
     if (totalSlots <= 6) return 3;
+    if (totalSlots <= 9) return 3;
     return 4;
   };
 
@@ -62,6 +67,10 @@ export function VariationsGrid({
     if (compareMode) {
       toggleCompareSelection(variation.id);
     } else {
+      // If not on Generate tab, switch to it when selecting a variation
+      if (activeTab !== 'generate') {
+        setActiveTab('generate');
+      }
       selectVariation(variation.id);
       onSelect?.(variation);
     }
@@ -144,10 +153,12 @@ export function VariationsGrid({
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`,
-          gap: '16px',
+          gap: totalSlots <= 3 ? '20px' : '16px',
           maxHeight: 'calc(100vh - 300px)',
-          overflowY: totalSlots > 8 ? 'auto' : 'visible',
+          overflowY: totalSlots > 9 ? 'auto' : 'visible',
           padding: '4px',
+          justifyContent: 'center',
+          alignItems: 'start',
         }}
       >
         {slots.map(({ index, variation, job }) => (

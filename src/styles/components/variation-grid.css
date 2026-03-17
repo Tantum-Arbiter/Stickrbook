@@ -18,8 +18,22 @@
   overflow: hidden;
   position: relative;
   aspect-ratio: 1024/704;
-  min-height: 120px;
-  max-height: 300px;
+  min-height: 150px;
+  max-height: 400px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Scale cards better for small grids */
+.variation-grid[style*="repeat(1,"] .variation-card {
+  max-height: 500px;
+}
+
+.variation-grid[style*="repeat(2,"] .variation-card {
+  max-height: 450px;
+}
+
+.variation-grid[style*="repeat(3,"] .variation-card {
+  max-height: 350px;
 }
 
 .variation-card img {
@@ -27,6 +41,16 @@
   height: 100%;
   object-fit: cover;
   cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.variation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.variation-card:hover img {
+  transform: scale(1.02);
 }
 
 /* ========== Variation Placeholder ========== */
@@ -141,6 +165,17 @@
   background: var(--brand-teal);
   transform: none;
   box-shadow: none;
+}
+
+/* ========== Selection States ========== */
+.variation-card.selected {
+  border: 3px solid var(--brand-teal);
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
+}
+
+.variation-card.compare-selected {
+  border: 3px solid var(--brand-blue);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
 }
 
 /* ========== Image Preview Overlay ========== */
