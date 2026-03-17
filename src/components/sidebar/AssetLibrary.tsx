@@ -8,6 +8,8 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useProjectsStore } from '../../store';
 import type { Asset, AssetType } from '../../store/types';
+import { Button } from '../ui/Button';
+import { useToast } from '../ui/Toast';
 import {
   Package,
   User,
@@ -16,6 +18,10 @@ import {
   Paperclip,
   Search,
   ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  Plus,
 } from 'lucide-react';
 
 // Asset type tabs
@@ -44,6 +50,11 @@ export function AssetLibrary({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(new Set());
+  const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
+  const [draggedAsset, setDraggedAsset] = useState<Asset | null>(null);
+
+  const toast = useToast();
+  const updateAsset = useProjectsStore((s) => s.updateAsset);
 
   const currentBook = useProjectsStore((s) => s.currentBook());
   const assets = currentBook?.assets || [];
@@ -139,6 +150,99 @@ export function AssetLibrary({
     });
   }, []);
 
+  // Multi-select handlers
+  const toggleAssetSelection = useCallback((assetId: string, event?: React.MouseEvent) => {
+    if (event?.ctrlKey || event?.metaKey) {
+      // Ctrl/Cmd+click: toggle individual selection
+      setSelectedAssets((prev) => {
+        const next = new Set(prev);
+        if (next.has(assetId)) {
+          next.delete(assetId);
+        } else {
+          next.add(assetId);
+        }
+        return next;
+      });
+    } else if (event?.shiftKey && selectedAssets.size > 0) {
+      // Shift+click: select range
+      const allAssetIds = filteredAssets.map(a => a.id);
+      const lastSelected = Array.from(selectedAssets).pop();
+      const lastIndex = allAssetIds.indexOf(lastSelected || '');
+      const currentIndex = allAssetIds.indexOf(assetId);
+
+      if (lastIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(lastIndex, currentIndex);
+        const end = Math.max(lastIndex, currentIndex);
+        const rangeIds = allAssetIds.slice(start, end + 1);
+        setSelectedAssets(new Set(rangeIds));
+      }
+    } else {
+      // Regular click: select only this asset
+      setSelectedAssets(new Set([assetId]));
+    }
+  }, [selectedAssets, filteredAssets]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedAssets(new Set());
+  }, []);
+
+  // Create collection from selected assets
+  const createCollectionFromSelected = useCallback(async () => {
+    if (selectedAssets.size === 0) {
+      toast.error('No assets selected');
+      return;
+    }
+
+    const collectionName = window.prompt('Enter a name for the new collection:');
+    if (!collectionName) return;
+
+    try {
+      // Update all selected assets to have the new collection
+      await Promise.all(
+        Array.from(selectedAssets).map(assetId =>
+          updateAsset(assetId, { collection: collectionName })
+        )
+      );
+      toast.success(`Created collection "${collectionName}" with ${selectedAssets.size} assets`);
+      clearSelection();
+    } catch (error) {
+      console.error('Failed to create collection:', error);
+      toast.error('Failed to create collection');
+    }
+  }, [selectedAssets, updateAsset, toast, clearSelection]);
+
+  // Drag and drop handlers
+  const handleAssetDragStart = useCallback((asset: Asset, e: React.DragEvent) => {
+    setDraggedAsset(asset);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', asset.id);
+
+    // Call the original onDragStart if provided
+    onAssetDragStart?.(asset, e);
+  }, [onAssetDragStart]);
+
+  const handleCollectionDrop = useCallback(async (targetCollection: string | null, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedAsset) return;
+
+    try {
+      await updateAsset(draggedAsset.id, { collection: targetCollection || undefined });
+      const collectionLabel = targetCollection || 'Uncategorized';
+      toast.success(`Moved "${draggedAsset.name}" to ${collectionLabel}`);
+      setDraggedAsset(null);
+    } catch (error) {
+      console.error('Failed to move asset:', error);
+      toast.error('Failed to move asset');
+    }
+  }, [draggedAsset, updateAsset, toast]);
+
+  const handleCollectionDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
   return (
     <div className={`asset-library ${className}`}>
       {/* Asset Type Tabs */}
@@ -155,6 +259,31 @@ export function AssetLibrary({
           </button>
         ))}
       </div>
+
+      {/* Multi-select Actions */}
+      {selectedAssets.size > 0 && (
+        <div style={{
+          padding: '8px',
+          background: 'var(--accent-bg)',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.85rem'
+        }}>
+          <span style={{ flex: 1, fontWeight: 600, color: 'var(--accent-color)' }}>
+            {selectedAssets.size} asset{selectedAssets.size !== 1 ? 's' : ''} selected
+          </span>
+          <Button size="small" variant="primary" onClick={createCollectionFromSelected}>
+            <Plus size={14} />
+            Create Collection
+          </Button>
+          <Button size="small" variant="secondary" onClick={clearSelection}>
+            Clear
+          </Button>
+        </div>
+      )}
 
       {/* Filter Dropdown */}
       <div className={`assets-filter-dropdown ${showFilters ? '' : 'collapsed'}`}>
@@ -227,25 +356,37 @@ export function AssetLibrary({
         {Object.keys(assetsByCollection).length > 0 ? (
           Object.entries(assetsByCollection).map(([collection, collectionAssets]) => {
             const isCollapsed = collapsedCollections.has(collection);
+            const isUncategorized = collection === 'Uncategorized';
+            const FolderIcon = isCollapsed ? Folder : FolderOpen;
+
             return (
               <div key={collection} style={{ marginBottom: '16px' }}>
-                {/* Collection Header */}
+                {/* Collection Header - Droppable */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
                     padding: '8px',
-                    background: 'var(--bg-card)',
+                    background: draggedAsset && draggedAsset.collection !== collection
+                      ? 'var(--accent-bg)'
+                      : 'var(--bg-card)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     marginBottom: '8px',
                     fontSize: '0.85rem',
                     fontWeight: 600,
+                    border: draggedAsset && draggedAsset.collection !== collection
+                      ? '2px dashed var(--accent-color)'
+                      : '2px solid transparent',
+                    transition: 'all 0.2s',
                   }}
                   onClick={() => toggleCollection(collection)}
+                  onDragOver={handleCollectionDragOver}
+                  onDrop={(e) => handleCollectionDrop(isUncategorized ? null : collection, e)}
                 >
                   {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                  <FolderIcon size={16} style={{ color: isUncategorized ? 'var(--text-muted)' : 'var(--accent-color)' }} />
                   <span>{collection}</span>
                   <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                     {collectionAssets.length}
@@ -259,8 +400,14 @@ export function AssetLibrary({
                       <AssetThumbnail
                         key={asset.id}
                         asset={asset}
-                        onClick={() => onAssetClick?.(asset)}
-                        onDragStart={(e) => onAssetDragStart?.(asset, e)}
+                        isSelected={selectedAssets.has(asset.id)}
+                        onClick={(e) => {
+                          toggleAssetSelection(asset.id, e);
+                          if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                            onAssetClick?.(asset);
+                          }
+                        }}
+                        onDragStart={(e) => handleAssetDragStart(asset, e)}
                       />
                     ))}
                   </div>
@@ -281,18 +428,44 @@ export function AssetLibrary({
 // Asset thumbnail component
 interface AssetThumbnailProps {
   asset: Asset;
-  onClick: () => void;
+  isSelected?: boolean;
+  onClick: (e: React.MouseEvent) => void;
   onDragStart: (e: React.DragEvent) => void;
 }
 
-function AssetThumbnail({ asset, onClick, onDragStart }: AssetThumbnailProps) {
+function AssetThumbnail({ asset, isSelected = false, onClick, onDragStart }: AssetThumbnailProps) {
   return (
     <div
       className="sidebar-asset-thumb"
       onClick={onClick}
       draggable
       onDragStart={onDragStart}
+      style={{
+        outline: isSelected ? '3px solid var(--accent-color)' : 'none',
+        outlineOffset: '-3px',
+        position: 'relative',
+      }}
     >
+      {isSelected && (
+        <div style={{
+          position: 'absolute',
+          top: '4px',
+          right: '4px',
+          width: '20px',
+          height: '20px',
+          borderRadius: '50%',
+          background: 'var(--accent-color)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 'bold',
+          color: 'white',
+          zIndex: 1,
+        }}>
+          ✓
+        </div>
+      )}
       <img
         src={asset.thumbnailPath || asset.imagePath}
         alt={asset.name}
