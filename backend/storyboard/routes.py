@@ -644,11 +644,21 @@ single object, isolated prop, transparent background, game asset style, clean ed
 
     logger.info(f"Generating {mode.value} with dimensions: {img_width}x{img_height}")
 
+    # Select appropriate workflow based on generation mode
+    if mode == GenerationMode.CHARACTER:
+        workflow = WorkflowType.CHARACTER_REF
+    elif mode == GenerationMode.OBJECT:
+        workflow = WorkflowType.PROP
+    elif mode == GenerationMode.SCENE:
+        workflow = WorkflowType.BACKGROUND
+    else:
+        workflow = WorkflowType.FULL_PAGE
+
     for i, seed in enumerate(seeds):
         from models import Job
         job = Job(JobCreateRequest(
             job_type="variation",
-            workflow_type=WorkflowType.FULL_PAGE,
+            workflow_type=workflow,
             priority="high",
             inputs=JobInputs(
                 prompt=full_prompt,

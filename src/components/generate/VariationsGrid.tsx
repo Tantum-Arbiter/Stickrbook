@@ -6,11 +6,13 @@
  */
 
 import { useState } from 'react';
-import { useGenerationStore, useUIStore } from '../../store';
+import { useGenerationStore, useUIStore, useProjectsStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
-import { GitCompare } from 'lucide-react';
+import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
+import { generationApi } from '../../api/endpoints';
+import { toast } from 'react-hot-toast';
 
 export interface VariationsGridProps {
   className?: string;
@@ -106,6 +108,78 @@ export function VariationsGrid({
     clearCompareSelection();
   };
 
+  // Midjourney-style variation actions
+  const handleVarySubtle = async (variation: Variation) => {
+    const currentBook = useProjectsStore.getState().currentBook();
+    if (!currentBook) {
+      toast.error('No book selected');
+      return;
+    }
+
+    try {
+      toast.loading('Creating subtle variations...', { id: 'vary-subtle' });
+      await generationApi.submitVariations(currentBook.id, {
+        prompt: variation.prompt,
+        negative_prompt: variation.negativePrompt || '',
+        base_seed: variation.seed,
+        num_variations: 4,
+        generation_mode: 'scene',
+      });
+      toast.success('Subtle variations queued!', { id: 'vary-subtle' });
+    } catch (error) {
+      console.error('Failed to create subtle variations:', error);
+      toast.error('Failed to create variations', { id: 'vary-subtle' });
+    }
+  };
+
+  const handleVaryStrong = async (variation: Variation) => {
+    const currentBook = useProjectsStore.getState().currentBook();
+    if (!currentBook) {
+      toast.error('No book selected');
+      return;
+    }
+
+    try {
+      toast.loading('Creating strong variations...', { id: 'vary-strong' });
+      // Use a different seed range for stronger variations
+      const newSeed = variation.seed + 1000;
+      await generationApi.submitVariations(currentBook.id, {
+        prompt: variation.prompt,
+        negative_prompt: variation.negativePrompt || '',
+        base_seed: newSeed,
+        num_variations: 4,
+        generation_mode: 'scene',
+      });
+      toast.success('Strong variations queued!', { id: 'vary-strong' });
+    } catch (error) {
+      console.error('Failed to create strong variations:', error);
+      toast.error('Failed to create variations', { id: 'vary-strong' });
+    }
+  };
+
+  const handleRegenerate = async (variation: Variation) => {
+    const currentBook = useProjectsStore.getState().currentBook();
+    if (!currentBook) {
+      toast.error('No book selected');
+      return;
+    }
+
+    try {
+      toast.loading('Regenerating with same seed...', { id: 'regenerate' });
+      await generationApi.submitVariations(currentBook.id, {
+        prompt: variation.prompt,
+        negative_prompt: variation.negativePrompt || '',
+        base_seed: variation.seed,
+        num_variations: 1,
+        generation_mode: 'scene',
+      });
+      toast.success('Regeneration queued!', { id: 'regenerate' });
+    } catch (error) {
+      console.error('Failed to regenerate:', error);
+      toast.error('Failed to regenerate', { id: 'regenerate' });
+    }
+  };
+
   const compareVariations = variations.filter(v => compareSelection.includes(v.id));
 
   return (
@@ -174,6 +248,9 @@ export function VariationsGrid({
             onSelect={handleSelect}
             onSave={handleSave}
             onEnlarge={handleEnlarge}
+            onVarySubtle={handleVarySubtle}
+            onVaryStrong={handleVaryStrong}
+            onRegenerate={handleRegenerate}
           />
         ))}
       </div>
@@ -210,6 +287,9 @@ interface VariationCardProps {
   onSelect: (variation: Variation) => void;
   onSave: (variation: Variation) => void;
   onEnlarge: (variation: Variation) => void;
+  onVarySubtle: (variation: Variation) => void;
+  onVaryStrong: (variation: Variation) => void;
+  onRegenerate: (variation: Variation) => void;
 }
 
 function VariationCard({
@@ -222,6 +302,9 @@ function VariationCard({
   onSelect,
   onSave,
   onEnlarge,
+  onVarySubtle,
+  onVaryStrong,
+  onRegenerate,
 }: VariationCardProps) {
   // Show loading state if job is active
   if (job && !variation) {
@@ -295,11 +378,63 @@ function VariationCard({
       <span className="seed-badge">Seed: {variation.seed}</span>
 
       {!compareMode && (
-        <div className="variation-actions">
-          <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
-            💾 Save
-          </Button>
-        </div>
+        <>
+          {/* Primary action - Save */}
+          <div className="variation-actions" style={{ marginBottom: '4px' }}>
+            <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
+              💾 Save
+            </Button>
+          </div>
+
+          {/* Midjourney-style variation actions */}
+          <div className="variation-actions-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '4px',
+            padding: '0 8px 8px 8px',
+          }}>
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={(e) => { e.stopPropagation(); onVarySubtle(variation); }}
+              title="Create subtle variations"
+              style={{ fontSize: '0.7rem', padding: '4px 6px' }}
+            >
+              <Sparkles size={12} style={{ marginRight: '2px' }} />
+              Vary (S)
+            </Button>
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={(e) => { e.stopPropagation(); onVaryStrong(variation); }}
+              title="Create strong variations"
+              style={{ fontSize: '0.7rem', padding: '4px 6px' }}
+            >
+              <Zap size={12} style={{ marginRight: '2px' }} />
+              Vary (St)
+            </Button>
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={(e) => { e.stopPropagation(); onRegenerate(variation); }}
+              title="Regenerate with same seed"
+              style={{ fontSize: '0.7rem', padding: '4px 6px' }}
+            >
+              <RefreshCw size={12} style={{ marginRight: '2px' }} />
+              Regen
+            </Button>
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={(e) => { e.stopPropagation(); onEnlarge(variation); }}
+              title="View full size"
+              style={{ fontSize: '0.7rem', padding: '4px 6px' }}
+            >
+              <Maximize2 size={12} style={{ marginRight: '2px' }} />
+              View
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
