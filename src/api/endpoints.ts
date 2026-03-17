@@ -105,7 +105,7 @@ export const assetsApi = {
 
 export const generationApi = {
   submitVariations: (bookId: string, data: SubmitJobRequest) =>
-    api.post<SubmitJobResponse>(`/books/${bookId}/generate/variations`, data),
+    api.post<SubmitJobResponse>(`/books/${bookId}/variations`, data),
 
   getJobStatus: (jobId: string) =>
     api.get<GenerationJobResponse>(`/jobs/${jobId}`),
