@@ -1618,6 +1618,39 @@ async def list_assets(
     return {"assets": [_asset_to_dict(a) for a in assets]}
 
 
+@router.put("/books/{book_id}/assets/{asset_id}")
+async def update_asset(
+    book_id: str,
+    asset_id: str,
+    updates: dict,
+    repos: Repositories = Depends(get_repos)
+):
+    """Update asset properties (e.g., collection, name, tags)"""
+    book = await repos.books.get_by_id(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    asset = await repos.assets.get_by_id(asset_id)
+    if not asset or asset.book_id != book_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    # Update allowed fields
+    update_data = {}
+    if "collection" in updates:
+        update_data["collection"] = updates["collection"]
+    if "name" in updates:
+        update_data["name"] = updates["name"]
+    if "description" in updates:
+        update_data["description"] = updates["description"]
+    if "tags" in updates:
+        update_data["tags"] = updates["tags"]
+
+    if update_data:
+        asset = await repos.assets.update(asset, update_data)
+
+    return {"asset": _asset_to_dict(asset)}
+
+
 @router.get("/books/{book_id}/assets/{asset_id}/image")
 async def get_asset_image(
     book_id: str,

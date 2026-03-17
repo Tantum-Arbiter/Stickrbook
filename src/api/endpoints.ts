@@ -95,6 +95,9 @@ export const assetsApi = {
   get: (bookId: string, assetId: string) =>
     api.get<{ asset: AssetResponse }>(`/books/${bookId}/assets/${assetId}`),
 
+  update: (bookId: string, assetId: string, data: Partial<AssetResponse>) =>
+    api.put<{ asset: AssetResponse }>(`/books/${bookId}/assets/${assetId}`, data),
+
   delete: (bookId: string, assetId: string) =>
     api.delete<{ deleted: boolean }>(`/books/${bookId}/assets/${assetId}`),
 };

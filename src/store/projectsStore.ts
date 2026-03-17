@@ -375,6 +375,9 @@ export const useProjectsStore = create<ProjectState>()(
   },
 
   updateAsset: async (id: string, data: Partial<Asset>) => {
+    const book = get().currentBook();
+    if (!book) return;
+
     // Optimistic update
     set((state) => ({
       projects: state.projects.map((p) => ({
@@ -385,6 +388,21 @@ export const useProjectsStore = create<ProjectState>()(
         })),
       })),
     }));
+
+    // Persist to backend
+    try {
+      await assetsApi.update(book.id, id, {
+        collection: data.collection,
+        name: data.name,
+        description: data.description,
+        tags: data.tags,
+      });
+    } catch (error) {
+      const message = error instanceof ApiClientError ? error.detail || error.message : 'Failed to update asset';
+      set({ error: message });
+      // Revert optimistic update on error
+      await get().loadProjects();
+    }
   },
 
   deleteAsset: async (id: string) => {
