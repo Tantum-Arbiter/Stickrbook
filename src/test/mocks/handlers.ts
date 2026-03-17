@@ -99,7 +99,7 @@ export const handlers = [
   }),
 
   // Jobs endpoints
-  http.get('/v1/jobs/:jobId', async ({ params }) => {
+  http.get('/v1/storyboard/jobs/:jobId', async ({ params }) => {
     await delay(1000) // Simulate processing time
     return HttpResponse.json({
       job_id: params.jobId,
@@ -119,7 +119,7 @@ export const handlers = [
     })
   }),
 
-  http.delete('/v1/jobs/:jobId', () => {
+  http.delete('/v1/storyboard/jobs/:jobId', () => {
     return HttpResponse.json({ cancelled: true })
   }),
 
