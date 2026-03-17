@@ -246,6 +246,11 @@ async def process_job(job: Job):
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     # Startup
+    # Initialize database
+    from database.config import init_db
+    await init_db()
+    logger.info("Database initialized")
+
     job_queue.set_processor(process_job)
     await job_queue.start_worker()
 
