@@ -98,7 +98,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const currentBook = useProjectsStore.getState().currentBook();
     if (!currentBook) {
       console.error('No book selected for generation');
-      return;
+      throw new Error('No book selected. Please create or select a book first.');
     }
 
     set({ isGenerating: true });
@@ -148,6 +148,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       const message = error instanceof ApiClientError ? error.detail || error.message : 'Generation failed';
       console.error('Generation failed:', message);
       set({ isGenerating: false });
+
+      // Re-throw with user-friendly message
+      if (error instanceof ApiClientError && error.status === 0) {
+        throw new Error('Cannot connect to the backend server. Please ensure the server is running at the configured address.');
+      }
+      throw error;
     }
   },
 

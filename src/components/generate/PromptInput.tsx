@@ -41,16 +41,96 @@ const WORKFLOW_TYPES: Array<{ value: WorkflowType; label: string }> = [
   { value: 'background', label: 'Background Only' },
 ];
 
-// Scene presets (from legacy storyboard.html)
-const SCENE_PRESETS: Record<string, { label: string; background: string; camera: string; time: string; weather: string; space: string; mood: string; details: string }> = {
-  forest_adventure: { label: 'Forest Adventure', background: 'enchanted forest with tall trees and dappled sunlight, winding path through ancient woods', camera: 'eye_level', time: 'golden_hour', weather: 'magical', space: 'center_open', mood: 'magical', details: 'glowing mushrooms, fireflies, mossy stones, wildflowers' },
-  cozy_bedroom: { label: 'Cozy Bedroom', background: 'warm cozy bedroom with soft blankets, window seat, and soft lamplight', camera: 'medium_shot', time: 'dusk', weather: 'clear', space: 'center_open', mood: 'cozy', details: 'stuffed animals on bed, picture books, twinkling fairy lights, soft rug' },
-  sunny_beach: { label: 'Sunny Beach', background: 'sparkling sandy beach with gentle turquoise waves and distant horizon', camera: 'wide_shot', time: 'day', weather: 'sunny', space: 'foreground_open', mood: 'happy', details: 'seashells, beach umbrella, sandcastle, palm trees' },
-  magical_castle: { label: 'Magical Castle', background: 'majestic fairy tale castle on a hill with towers and gardens', camera: 'establishing', time: 'sunset', weather: 'magical', space: 'center_open', mood: 'magical', details: 'fluttering banners, rose garden, stone bridge, stained glass windows' },
-  underwater_world: { label: 'Underwater World', background: 'vibrant coral reef underwater kingdom with colorful coral formations', camera: 'medium_shot', time: 'day', weather: 'clear', space: 'multiple_spaces', mood: 'magical', details: 'coral formations, sea plants, bubbles, sunbeams through water' },
-  starry_night: { label: 'Starry Night Sky', background: 'peaceful hilltop meadow under vast starry sky with milky way', camera: 'wide_shot', time: 'night', weather: 'clear', space: 'foreground_open', mood: 'peaceful', details: 'wildflowers, fireflies, distant mountains, shooting stars' },
-  garden_party: { label: 'Garden Party', background: 'beautiful flower garden with white gazebo and stone pathways', camera: 'eye_level', time: 'golden_hour', weather: 'sunny', space: 'multiple_spaces', mood: 'happy', details: 'tea table setup, flower garlands, butterflies, hanging lanterns' },
-  snowy_mountain: { label: 'Snowy Mountain', background: 'snow-covered mountain meadow with frosted pine trees', camera: 'wide_shot', time: 'dawn', weather: 'snowy', space: 'center_open', mood: 'peaceful', details: 'snowflakes, icicles, frozen stream, cozy cabin in distance' },
+// Child-safe negative prompt to avoid inappropriate content and IP infringement
+const DEFAULT_NEGATIVE_PROMPT = 'violence, weapons, scary, frightening, horror, gore, blood, injury, death, sad, crying, distressed, angry faces, dark themes, nightmare, monster, demon, evil, inappropriate, adult content, suggestive, revealing, copyrighted characters, trademarked, brand logos, Disney, Marvel, DC Comics, Pokemon, specific movie characters, celebrity likenesses, photorealistic people, realistic human faces, uncanny valley, distorted anatomy, extra limbs, deformed, ugly, low quality, blurry, watermark, text, signature';
+
+// Storybook theme presets with appropriate negative prompts
+interface StoryThemePreset {
+  label: string;
+  description: string;
+  artStyle: string;
+  negativePrompt: string;
+  mood: string;
+  colorPalette: string;
+}
+
+const STORYBOOK_THEMES: Record<string, StoryThemePreset> = {
+  fairy_tale: {
+    label: '🧚 Classic Fairy Tale',
+    description: 'Whimsical watercolor style with soft colors and magical elements',
+    artStyle: 'children\'s book illustration, watercolor painting, soft pastel colors, whimsical, storybook art',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'magical and enchanting',
+    colorPalette: 'soft pastels, gentle purples, pinks, and blues',
+  },
+  adventure: {
+    label: '🗺️ Adventure Story',
+    description: 'Vibrant and dynamic with bold colors and exciting scenes',
+    artStyle: 'children\'s adventure book, vibrant colors, dynamic composition, playful illustration style',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'exciting and adventurous',
+    colorPalette: 'bright primary colors, bold contrasts',
+  },
+  educational: {
+    label: '📚 Educational',
+    description: 'Clear, friendly illustrations perfect for learning',
+    artStyle: 'educational children\'s book, clear simple shapes, friendly illustration, bright cheerful colors',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'friendly and encouraging',
+    colorPalette: 'bright cheerful colors, high contrast for clarity',
+  },
+  bedtime: {
+    label: '🌙 Bedtime Story',
+    description: 'Soft, calming illustrations with gentle colors',
+    artStyle: 'bedtime storybook, soft gentle illustration, dreamy atmosphere, calming colors, peaceful',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT + ', bright colors, high contrast, energetic, exciting',
+    mood: 'calm and peaceful',
+    colorPalette: 'soft blues, gentle purples, warm creams',
+  },
+  nature: {
+    label: '🌿 Nature & Animals',
+    description: 'Natural, organic style celebrating the outdoors',
+    artStyle: 'nature children\'s book, organic illustration style, natural colors, botanical art influence',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'peaceful and wonder-filled',
+    colorPalette: 'natural greens, earth tones, sky blues',
+  },
+  fantasy: {
+    label: '✨ Fantasy & Magic',
+    description: 'Enchanting style with sparkles and magical elements',
+    artStyle: 'fantasy children\'s book, magical illustration, sparkles and glitter effects, enchanted atmosphere',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'magical and wondrous',
+    colorPalette: 'jewel tones, magical purples, shimmering golds',
+  },
+  friendship: {
+    label: '💕 Friendship & Kindness',
+    description: 'Warm, heartfelt illustrations emphasizing connection',
+    artStyle: 'heartwarming children\'s book, warm friendly illustration, gentle expressions, cozy atmosphere',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'warm and loving',
+    colorPalette: 'warm oranges, soft pinks, gentle yellows',
+  },
+  silly_fun: {
+    label: '🎉 Silly & Fun',
+    description: 'Playful, energetic style with humor and movement',
+    artStyle: 'playful children\'s book, energetic illustration, fun cartoonish style, dynamic movement',
+    negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+    mood: 'playful and joyful',
+    colorPalette: 'bright rainbow colors, high energy palette',
+  },
+};
+
+// Scene presets (from legacy storyboard.html) - now with theme integration
+const SCENE_PRESETS: Record<string, { label: string; background: string; camera: string; time: string; weather: string; space: string; mood: string; details: string; theme?: string }> = {
+  forest_adventure: { label: 'Forest Adventure', background: 'enchanted forest with tall trees and dappled sunlight, winding path through ancient woods', camera: 'eye_level', time: 'golden_hour', weather: 'magical', space: 'center_open', mood: 'magical', details: 'glowing mushrooms, fireflies, mossy stones, wildflowers', theme: 'fairy_tale' },
+  cozy_bedroom: { label: 'Cozy Bedroom', background: 'warm cozy bedroom with soft blankets, window seat, and soft lamplight', camera: 'medium_shot', time: 'dusk', weather: 'clear', space: 'center_open', mood: 'cozy', details: 'stuffed animals on bed, picture books, twinkling fairy lights, soft rug', theme: 'bedtime' },
+  sunny_beach: { label: 'Sunny Beach', background: 'sparkling sandy beach with gentle turquoise waves and distant horizon', camera: 'wide_shot', time: 'day', weather: 'sunny', space: 'foreground_open', mood: 'happy', details: 'seashells, beach umbrella, sandcastle, palm trees', theme: 'adventure' },
+  magical_castle: { label: 'Magical Castle', background: 'majestic fairy tale castle on a hill with towers and gardens', camera: 'establishing', time: 'sunset', weather: 'magical', space: 'center_open', mood: 'magical', details: 'fluttering banners, rose garden, stone bridge, stained glass windows', theme: 'fantasy' },
+  underwater_world: { label: 'Underwater World', background: 'vibrant coral reef underwater kingdom with colorful coral formations', camera: 'medium_shot', time: 'day', weather: 'clear', space: 'multiple_spaces', mood: 'magical', details: 'coral formations, sea plants, bubbles, sunbeams through water', theme: 'nature' },
+  starry_night: { label: 'Starry Night Sky', background: 'peaceful hilltop meadow under vast starry sky with milky way', camera: 'wide_shot', time: 'night', weather: 'clear', space: 'foreground_open', mood: 'peaceful', details: 'wildflowers, fireflies, distant mountains, shooting stars', theme: 'bedtime' },
+  garden_party: { label: 'Garden Party', background: 'beautiful flower garden with white gazebo and stone pathways', camera: 'eye_level', time: 'golden_hour', weather: 'sunny', space: 'multiple_spaces', mood: 'happy', details: 'tea table setup, flower garlands, butterflies, hanging lanterns', theme: 'friendship' },
+  snowy_mountain: { label: 'Snowy Mountain', background: 'snow-covered mountain meadow with frosted pine trees', camera: 'wide_shot', time: 'dawn', weather: 'snowy', space: 'center_open', mood: 'peaceful', details: 'snowflakes, icicles, frozen stream, cozy cabin in distance', theme: 'nature' },
 };
 
 // Character presets (from legacy storyboard.html)
@@ -189,6 +269,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
   const [selectedPoses, setSelectedPoses] = useState<string[]>(['standing']);
   const [selectedViewAngles, setSelectedViewAngles] = useState<string[]>(['front']);
   const [selectedObjectAngles, setSelectedObjectAngles] = useState<string[]>(['front']);
+  const [selectedTheme, setSelectedTheme] = useState<string>('');
   const [sceneSettings, setSceneSettings] = useState({
     background: '',
     camera: 'eye_level',
@@ -198,9 +279,43 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     details: '',
   });
 
-  const handleGenerate = () => {
-    if (!prompt.trim()) return;
-    generateVariations();
+  // Initialize with default negative prompt if empty
+  useState(() => {
+    if (!negativePrompt) {
+      setNegativePrompt(DEFAULT_NEGATIVE_PROMPT);
+    }
+  });
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      alert('Please enter a prompt to generate images.');
+      return;
+    }
+
+    if (!currentBook) {
+      alert('Please create or select a book first before generating images.');
+      return;
+    }
+
+    try {
+      await generateVariations();
+    } catch (error) {
+      console.error('Generation error:', error);
+      alert('Failed to generate images. Please check that the backend server is running and try again.');
+    }
+  };
+
+  const handleThemeChange = (themeKey: string) => {
+    if (!themeKey) {
+      setSelectedTheme('');
+      return;
+    }
+    const theme = STORYBOOK_THEMES[themeKey];
+    if (!theme) return;
+
+    setSelectedTheme(themeKey);
+    // Apply theme's negative prompt
+    setNegativePrompt(theme.negativePrompt);
   };
 
   const handleScenePresetChange = (presetKey: string) => {
@@ -215,25 +330,61 @@ export function PromptInput({ className = '' }: PromptInputProps) {
       mood: preset.mood,
       details: preset.details,
     });
-    // Build prompt from preset
+
+    // Apply theme if preset has one
+    if (preset.theme) {
+      const theme = STORYBOOK_THEMES[preset.theme];
+      if (theme) {
+        setSelectedTheme(preset.theme);
+        // Build prompt with theme art style
+        const newPrompt = `${theme.artStyle}, ${preset.background}, ${preset.details}`;
+        setPrompt(newPrompt);
+        setNegativePrompt(theme.negativePrompt);
+        return;
+      }
+    }
+
+    // Build prompt from preset without theme
     const newPrompt = `${preset.background}, ${preset.details}`;
     setPrompt(newPrompt);
+    // Ensure negative prompt is set
+    if (!negativePrompt) {
+      setNegativePrompt(DEFAULT_NEGATIVE_PROMPT);
+    }
   };
 
   const handleCharacterPresetChange = (presetKey: string) => {
     if (!presetKey) return;
     const preset = CHARACTER_PRESETS[presetKey];
     if (!preset) return;
-    const newPrompt = `${preset.description}, ${preset.expression}, isolated on transparent background`;
+
+    // Apply current theme's art style if selected
+    const theme = selectedTheme ? STORYBOOK_THEMES[selectedTheme] : null;
+    const artStylePrefix = theme ? `${theme.artStyle}, ` : '';
+    const newPrompt = `${artStylePrefix}${preset.description}, ${preset.expression}, isolated on transparent background`;
     setPrompt(newPrompt);
+
+    // Ensure negative prompt is set
+    if (!negativePrompt) {
+      setNegativePrompt(DEFAULT_NEGATIVE_PROMPT);
+    }
   };
 
   const handleObjectPresetChange = (presetKey: string) => {
     if (!presetKey) return;
     const preset = OBJECT_PRESETS[presetKey];
     if (!preset) return;
-    const newPrompt = `${preset.description}, isolated on transparent background`;
+
+    // Apply current theme's art style if selected
+    const theme = selectedTheme ? STORYBOOK_THEMES[selectedTheme] : null;
+    const artStylePrefix = theme ? `${theme.artStyle}, ` : '';
+    const newPrompt = `${artStylePrefix}${preset.description}, isolated on transparent background`;
     setPrompt(newPrompt);
+
+    // Ensure negative prompt is set
+    if (!negativePrompt) {
+      setNegativePrompt(DEFAULT_NEGATIVE_PROMPT);
+    }
   };
 
   const togglePose = (pose: string) => {
@@ -270,6 +421,34 @@ export function PromptInput({ className = '' }: PromptInputProps) {
           </button>
         ))}
       </div>
+
+      {/* Storybook Theme Selector */}
+      <Select
+        label="📖 Storybook Theme (Art Style)"
+        value={selectedTheme}
+        onChange={(e) => handleThemeChange(e.target.value)}
+        disabled={isGenerating}
+      >
+        <option value="">— Choose a theme —</option>
+        {Object.entries(STORYBOOK_THEMES).map(([key, theme]) => (
+          <option key={key} value={key}>{theme.label}</option>
+        ))}
+      </Select>
+
+      {selectedTheme && (
+        <div className="theme-info" style={{
+          padding: '8px 12px',
+          background: 'var(--bg-secondary, #f5f5f5)',
+          borderRadius: '6px',
+          fontSize: '0.85rem',
+          marginBottom: '12px'
+        }}>
+          <strong>{STORYBOOK_THEMES[selectedTheme].label}</strong>
+          <p style={{ margin: '4px 0 0 0', opacity: 0.8 }}>
+            {STORYBOOK_THEMES[selectedTheme].description}
+          </p>
+        </div>
+      )}
 
       {/* Workflow Type Dropdown */}
       <Select
