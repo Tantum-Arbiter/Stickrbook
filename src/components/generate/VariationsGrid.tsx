@@ -9,10 +9,10 @@ import { useState } from 'react';
 import { useGenerationStore, useUIStore, useProjectsStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
+import { useToast } from '../ui/Toast';
 import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
 import { generationApi } from '../../api/endpoints';
-import { toast } from 'react-hot-toast';
 
 export interface VariationsGridProps {
   className?: string;
@@ -40,6 +40,7 @@ export function VariationsGrid({
     toggleCompareSelection,
     clearCompareSelection,
   } = useGenerationStore();
+  const toast = useToast();
 
   const setActiveTab = useUIStore((s) => s.setActiveTab);
   const activeTab = useUIStore((s) => s.activeTab);
@@ -117,7 +118,7 @@ export function VariationsGrid({
     }
 
     try {
-      toast.loading('Creating subtle variations...', { id: 'vary-subtle' });
+      toast.info('Creating subtle variations...');
       await generationApi.submitVariations(currentBook.id, {
         prompt: variation.prompt,
         negative_prompt: variation.negativePrompt || '',
@@ -125,10 +126,10 @@ export function VariationsGrid({
         num_variations: 4,
         generation_mode: 'scene',
       });
-      toast.success('Subtle variations queued!', { id: 'vary-subtle' });
+      toast.success('Subtle variations queued!');
     } catch (error) {
       console.error('Failed to create subtle variations:', error);
-      toast.error('Failed to create variations', { id: 'vary-subtle' });
+      toast.error('Failed to create variations');
     }
   };
 
@@ -140,7 +141,7 @@ export function VariationsGrid({
     }
 
     try {
-      toast.loading('Creating strong variations...', { id: 'vary-strong' });
+      toast.info('Creating strong variations...');
       // Use a different seed range for stronger variations
       const newSeed = variation.seed + 1000;
       await generationApi.submitVariations(currentBook.id, {
@@ -150,10 +151,10 @@ export function VariationsGrid({
         num_variations: 4,
         generation_mode: 'scene',
       });
-      toast.success('Strong variations queued!', { id: 'vary-strong' });
+      toast.success('Strong variations queued!');
     } catch (error) {
       console.error('Failed to create strong variations:', error);
-      toast.error('Failed to create variations', { id: 'vary-strong' });
+      toast.error('Failed to create variations');
     }
   };
 
@@ -165,7 +166,7 @@ export function VariationsGrid({
     }
 
     try {
-      toast.loading('Regenerating with same seed...', { id: 'regenerate' });
+      toast.info('Regenerating with same seed...');
       await generationApi.submitVariations(currentBook.id, {
         prompt: variation.prompt,
         negative_prompt: variation.negativePrompt || '',
@@ -173,10 +174,10 @@ export function VariationsGrid({
         num_variations: 1,
         generation_mode: 'scene',
       });
-      toast.success('Regeneration queued!', { id: 'regenerate' });
+      toast.success('Regeneration queued!');
     } catch (error) {
       console.error('Failed to regenerate:', error);
-      toast.error('Failed to regenerate', { id: 'regenerate' });
+      toast.error('Failed to regenerate');
     }
   };
 
