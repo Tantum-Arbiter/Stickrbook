@@ -604,8 +604,17 @@ export const useGenerationStore = create<GenerationState>()(
       }),
       // Re-subscribe to active jobs on hydration
       onRehydrateStorage: () => (state) => {
+        console.log('🔄 Rehydrating generation store...');
+
+        if (!state) {
+          console.log('⚠️ No state to rehydrate');
+          return;
+        }
+
+        console.log(`📊 Rehydrated state: ${state.activeJobs?.length || 0} active jobs, ${state.variations?.length || 0} variations`);
+
         if (state?.activeJobs && state.activeJobs.length > 0) {
-          console.log(`Rehydrated ${state.activeJobs.length} active jobs, validating...`);
+          console.log(`🔍 Validating ${state.activeJobs.length} active jobs...`);
 
           // Clear jobs older than 10 minutes (backend job retention time)
           const TEN_MINUTES = 10 * 60 * 1000;
@@ -618,19 +627,20 @@ export const useGenerationStore = create<GenerationState>()(
 
             // If job is older than 10 minutes, it's likely expired from backend
             if (jobAge > TEN_MINUTES) {
-              console.log(`Job ${job.id} is ${Math.round(jobAge / 60000)} minutes old, removing`);
+              console.log(`❌ Job ${job.id} is ${Math.round(jobAge / 60000)} minutes old, removing`);
               expiredJobs.push(job);
             } else if (job.status === 'complete' || job.status === 'completed') {
               // Completed jobs should be in variations, not active jobs
-              console.log(`Job ${job.id} is complete, removing from active jobs`);
+              console.log(`✅ Job ${job.id} is complete, removing from active jobs`);
               expiredJobs.push(job);
             } else {
               // Job is recent and still active, keep it
+              console.log(`✓ Job ${job.id} is valid (age: ${Math.round(jobAge / 1000)}s, status: ${job.status})`);
               validJobs.push(job);
 
               // Re-subscribe if still generating
               if (job.status === 'pending' || job.status === 'generating') {
-                console.log(`Re-subscribing to job ${job.id}`);
+                console.log(`🔔 Re-subscribing to job ${job.id}`);
                 state.subscribeToJob(job.id);
               }
             }
@@ -638,9 +648,13 @@ export const useGenerationStore = create<GenerationState>()(
 
           // Update state with only valid jobs
           if (expiredJobs.length > 0) {
-            console.log(`Removed ${expiredJobs.length} expired/completed jobs`);
+            console.log(`🧹 Removed ${expiredJobs.length} expired/completed jobs, keeping ${validJobs.length}`);
             state.activeJobs = validJobs;
+          } else {
+            console.log(`✓ All ${validJobs.length} jobs are valid`);
           }
+        } else {
+          console.log('✓ No active jobs to validate');
         }
       },
     }

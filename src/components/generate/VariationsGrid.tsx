@@ -49,8 +49,9 @@ export function VariationsGrid({
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [collapsedBatches, setCollapsedBatches] = useState<Set<string>>(new Set());
 
-  // Create slots based on variation count - fill with variations or jobs
-  const totalSlots = Math.max(variationCount, variations.length, activeJobs.length);
+  // Create slots based on actual content - only show slots for variations or active jobs
+  // Don't create empty slots based on variationCount alone
+  const totalSlots = Math.max(variations.length, activeJobs.length);
   const slots = Array.from({ length: totalSlots }, (_, index) => {
     const variation = variations[index];
     const job = activeJobs[index];
