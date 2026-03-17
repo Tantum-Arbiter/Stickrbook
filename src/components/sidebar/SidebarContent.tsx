@@ -28,6 +28,8 @@ export interface SidebarContentProps {
 export function SidebarContent({ className = '', activeTab = 'generate' }: SidebarContentProps) {
   const createProject = useProjectsStore((s) => s.createProject);
   const addLayer = useEditorStore((s) => s.addLayer);
+  const setBaseImage = useEditorStore((s) => s.setBaseImage);
+  const baseImagePath = useEditorStore((s) => s.baseImagePath);
   const toast = useToast();
 
   // Resizable sections state
@@ -83,26 +85,32 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
   const handleAssetClick = useCallback(
     (asset: Asset) => {
       if (activeTab === 'edit') {
-        // Add asset as layer to canvas with default dimensions
-        addLayer({
-          assetId: asset.id,
-          x: 100,
-          y: 100,
-          width: 200,
-          height: 200,
-          scale: 1,
-          rotation: 0,
-          zIndex: 0,
-          opacity: 1,
-          visible: true,
-          locked: false,
-        });
-        toast.info(`Added "${asset.name}" to canvas`);
+        // If no base image, set this asset as the base image
+        if (!baseImagePath) {
+          setBaseImage(asset.imagePath);
+          toast.success(`Loaded "${asset.name}" as base image`);
+        } else {
+          // Add asset as layer to canvas with default dimensions
+          addLayer({
+            assetId: asset.id,
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            scale: 1,
+            rotation: 0,
+            zIndex: 0,
+            opacity: 1,
+            visible: true,
+            locked: false,
+          });
+          toast.info(`Added "${asset.name}" as layer`);
+        }
       } else {
         toast.info(`Selected: ${asset.name}`);
       }
     },
-    [activeTab, addLayer, toast]
+    [activeTab, addLayer, setBaseImage, baseImagePath, toast]
   );
 
   const handleAssetDragStart = useCallback((asset: Asset, e: React.DragEvent) => {

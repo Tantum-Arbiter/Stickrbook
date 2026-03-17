@@ -33,6 +33,8 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
     setZoom,
     setPan,
     selectLayer,
+    addLayer,
+    setBaseImage,
   } = useEditorStore();
 
   // Handle mouse wheel zoom
@@ -91,6 +93,68 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
     }
   }, [activeTool, selectLayer]);
 
+  // Handle drag and drop
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('application/json'));
+
+        if (data.type === 'asset') {
+          // Get drop position relative to canvas
+          const rect = canvasRef.current?.getBoundingClientRect();
+          if (!rect) return;
+
+          const x = (e.clientX - rect.left - panX) / zoom;
+          const y = (e.clientY - rect.top - panY) / zoom;
+
+          // If no base image, set as base
+          if (!baseImagePath) {
+            // For now, we need the full asset object to get imagePath
+            // This is a limitation - we'll just add as layer
+            addLayer({
+              assetId: data.assetId,
+              x: Math.max(0, x - 100),
+              y: Math.max(0, y - 100),
+              width: 200,
+              height: 200,
+              scale: 1,
+              rotation: 0,
+              zIndex: layers.length,
+              opacity: 1,
+              visible: true,
+              locked: false,
+            });
+          } else {
+            // Add as layer at drop position
+            addLayer({
+              assetId: data.assetId,
+              x: Math.max(0, x - 100),
+              y: Math.max(0, y - 100),
+              width: 200,
+              height: 200,
+              scale: 1,
+              rotation: 0,
+              zIndex: layers.length,
+              opacity: 1,
+              visible: true,
+              locked: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to handle drop:', error);
+      }
+    },
+    [canvasRef, panX, panY, zoom, baseImagePath, addLayer, layers.length]
+  );
+
   // Keyboard shortcuts for zoom
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -125,6 +189,8 @@ export function EditorCanvas({ className = '', onLayerClick }: EditorCanvasProps
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onClick={handleCanvasClick}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       <div
         ref={wrapperRef}
