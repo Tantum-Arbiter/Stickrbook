@@ -202,9 +202,49 @@ class MagicMergeRequest(BaseModel):
 
 ---
 
+## 🔧 **FINAL FIX: Simplified Alpha Blending**
+
+### **Remaining Ghosting Issue**
+
+Even with Poisson blending disabled, some ghosting was still visible (semi-transparent duplicate of character).
+
+**Root Cause**: The `enhanced_alpha_blend()` function was using **edge feathering** with distance transforms:
+- Created a 3-pixel transition zone at edges
+- Used distance transform for smooth falloff
+- These semi-transparent edge pixels appeared as ghost duplicates
+
+### **Final Solution**
+
+**Replaced with clean, simple alpha blending**:
+
+```python
+def alpha_blend(source, target, mask, position):
+    # Normalize mask to 0-1 range
+    alpha = mask.astype(float) / 255.0
+
+    # Simple alpha compositing (NO feathering, NO distance transforms)
+    blended = (
+        source * alpha +
+        target * (1 - alpha)
+    ).astype(np.uint8)
+```
+
+**Why This Works**:
+- Direct pixel-by-pixel alpha compositing
+- No edge processing that can create ghosting
+- Clean, predictable results
+- Preserves RMBG's high-quality edges
+
+---
+
 ## ✅ **Status**: FIXED
 
 All shadow figure and ghosting issues have been resolved! 🎉
 
-**Solution**: Use alpha blending (default) instead of Poisson blending for character compositing.
+**Final Solution Stack**:
+1. ✅ Disable Poisson blending (use alpha blending)
+2. ✅ Disable harmonization (can introduce artifacts)
+3. ✅ Simple alpha blend (no edge feathering)
+4. ✅ Preserve alpha through pipeline
+5. ✅ RGBA → white background before processing
 
