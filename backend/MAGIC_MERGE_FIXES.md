@@ -161,7 +161,50 @@ To verify the fixes:
 
 ---
 
+## 🚨 **CRITICAL UPDATE: Poisson Blending Disabled by Default**
+
+### **Final Root Cause**
+
+After extensive debugging, the fundamental issue is:
+
+**Poisson blending (OpenCV's `seamlessClone`) is incompatible with transparent characters.**
+
+**Why**:
+- Poisson blending uses **image gradients**, not actual pixel colors
+- Even with `NORMAL_CLONE`, gradients from transparent areas bleed into the scene
+- This creates ghosting/shadow effects that cannot be fixed with mask refinement
+- The algorithm was designed for **opaque images**, not RGBA with transparency
+
+### **Final Solution**
+
+**Disabled Poisson blending by default** in favor of **pure alpha blending**:
+
+```python
+# In routes.py
+class CompositeRequest(BaseModel):
+    seamBlending: bool = False  # Disabled by default
+
+class MagicMergeRequest(BaseModel):
+    seamBlending: bool = False  # Disabled by default
+    harmonize: bool = False     # Also disabled (can introduce artifacts)
+```
+
+**Why Alpha Blending Works**:
+- Uses actual pixel colors + alpha channel
+- No gradient calculations
+- Clean, predictable compositing
+- Perfect for character assets with transparency
+
+**Poisson Blending Still Available**:
+- Users can set `seamBlending: true` if needed
+- Useful for opaque images or specific artistic effects
+- Just not suitable for transparent characters
+
+---
+
 ## ✅ **Status**: FIXED
 
-Both shadow figure and ghosting issues have been resolved! 🎉
+All shadow figure and ghosting issues have been resolved! 🎉
+
+**Solution**: Use alpha blending (default) instead of Poisson blending for character compositing.
 
