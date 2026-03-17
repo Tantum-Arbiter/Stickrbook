@@ -138,15 +138,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       const response = await generationApi.submitVariations(currentBook.id, {
         prompt: state.prompt,
         negative_prompt: state.negativePrompt,
-        seed: state.seed || undefined,
-        steps: state.steps,
-        cfg_scale: state.cfgScale,
+        base_seed: state.seed || undefined,
         width: state.width,
         height: state.height,
-        character_id: state.characterId || undefined,
-        ipadapter_weight: state.ipadapterWeight,
-        mode: state.mode,
-        count: state.variationCount, // Use user-selected count
+        generation_mode: state.mode,
+        num_variations: state.variationCount, // Use user-selected count
+        character_prompt: state.characterId || undefined,
       });
 
       // Create jobs from response

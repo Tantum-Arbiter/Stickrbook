@@ -143,16 +143,14 @@ export interface GenerationJobResponse {
 export interface SubmitJobRequest {
   prompt: string;
   negative_prompt?: string;
-  seed?: number;
-  steps?: number;
-  cfg_scale?: number;
+  base_seed?: number;
+  preset_override?: Record<string, any>;
   width?: number;
   height?: number;
-  character_id?: string;
-  ipadapter_weight?: number;
-  preset_name?: string;
-  mode?: string;
-  count?: number;
+  generation_mode?: string;
+  character_prompt?: string;
+  num_variations?: number;
+  pose_name?: string;
 }
 
 export interface SubmitJobResponse {
