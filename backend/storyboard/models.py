@@ -128,14 +128,14 @@ class Project(BaseModel):
 
 class CreateProjectRequest(BaseModel):
     name: str
-    description: str = ""
+    description: Optional[str] = ""
 
 
 class CreateBookRequest(BaseModel):
     title: str
-    description: str = ""
+    description: Optional[str] = ""
     project_id: Optional[str] = None  # Optional: attach to a project
-    preset_name: str = "friendly-dragon"  # Use a preset template
+    preset_name: Optional[str] = "friendly-dragon"  # Use a preset template
     custom_preset: Optional[GenerationPreset] = None
 
 
