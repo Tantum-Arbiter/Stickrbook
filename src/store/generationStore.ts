@@ -396,17 +396,17 @@ export const useGenerationStore = create<GenerationState>()(
 
         const result = await response.json();
         console.log('✅ Backend response:', result);
+        console.log('🔍 Backend asset fields:', Object.keys(result.asset));
         const backendAsset = result.asset;
 
-        // Convert backend asset to frontend Asset type
-        // Mark as transparent since backend already processed it
+        // Backend sends imagePath (camelCase) with proper URL, not image_path (snake_case)
         const asset: Asset = {
           id: backendAsset.id,
           name: backendAsset.name,
           assetType: backendAsset.asset_type || assetType,
           collection: backendAsset.collection,
-          imagePath: backendAsset.image_path || backendAsset.filename,
-          thumbnailPath: backendAsset.image_path || backendAsset.filename,
+          imagePath: backendAsset.imagePath || backendAsset.image_path || backendAsset.filename,
+          thumbnailPath: backendAsset.thumbnailPath || backendAsset.image_path || backendAsset.filename,
           hasTransparency: backendAsset.has_transparency !== undefined ? backendAsset.has_transparency : true,
           tags: backendAsset.tags || ['transparent', 'auto-processed'],
           createdAt: new Date().toISOString(),

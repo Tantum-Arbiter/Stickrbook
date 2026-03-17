@@ -95,11 +95,14 @@ export function VariationsGrid({
 
     try {
       await saveVariation(saveDialogVariation.id, collectionName);
-      setSaveDialogVariation(null);
+      toast.success(`Saved asset to ${collectionName || 'library'}`);
+      setSaveDialogVariation(null); // Close dialog on success
       // Don't call onSave callback - it would trigger a duplicate save
       // The saveVariation function already handles the save operation
     } catch (error) {
       console.error('Failed to save variation:', error);
+      toast.error('Failed to save asset');
+      setSaveDialogVariation(null); // Close dialog even on error
     }
   };
 
