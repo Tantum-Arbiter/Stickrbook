@@ -308,30 +308,32 @@ export const useGenerationStore = create<GenerationState>()(
     const mode = get().mode;
     const assetType = mode === 'scene' ? 'background' : mode === 'character' ? 'character' : 'prop';
 
-    // For character/object types, use the transparency endpoint
+    // For character/object types, the backend already removed the background during generation
+    // Just save normally and mark as transparent
     if (mode === 'character' || mode === 'object') {
       try {
         const response = await fetch(
-          `/v1/storyboard/books/${currentBook.id}/variations/${id}/save-with-transparency?asset_type=${assetType}`,
+          `/v1/storyboard/books/${currentBook.id}/variations/${id}/select?asset_type=${assetType}`,
           { method: 'POST' }
         );
 
         if (!response.ok) {
-          throw new Error(`Failed to save with transparency: ${response.statusText}`);
+          throw new Error(`Failed to save asset: ${response.statusText}`);
         }
 
         const result = await response.json();
         const backendAsset = result.asset;
 
         // Convert backend asset to frontend Asset type
+        // Mark as transparent since backend already processed it
         const asset: Asset = {
           id: backendAsset.id,
           name: backendAsset.name,
           assetType: backendAsset.type || assetType,
           imagePath: backendAsset.image_path,
           thumbnailPath: backendAsset.image_path,
-          hasTransparency: true,
-          tags: backendAsset.tags || ['transparent'],
+          hasTransparency: true, // Backend already removed background during generation
+          tags: backendAsset.tags || ['transparent', 'auto-processed'],
           createdAt: new Date().toISOString(),
         };
 
@@ -339,7 +341,7 @@ export const useGenerationStore = create<GenerationState>()(
         await useProjectsStore.getState().addAsset(currentBook.id, asset);
         return asset;
       } catch (error) {
-        console.error('Failed to save with transparency, falling back to regular save:', error);
+        console.error('Failed to save asset, falling back to regular save:', error);
         // Fall through to regular save
       }
     }

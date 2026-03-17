@@ -215,6 +215,40 @@ async def process_job(job: Job):
             deleted = comfyui_client.cleanup_job_images(failed_images)
             logger.info(f"  Deleted {deleted} intermediate images from ComfyUI output")
 
+        # Post-process: Remove background for character/object generations
+        generation_mode = job.metadata.get("generation_mode") if job.metadata else None
+        if generation_mode in ["character", "object"] or job.workflow_type.value in ["character_ref", "character", "ref", "prop", "object", "item"]:
+            job.progress = JobProgress(phase="removing_background", percent=90)
+            logger.info(f"  Removing background for {generation_mode or job.workflow_type.value} generation...")
+
+            try:
+                # Use RMBG for robust background removal
+                from magic_merge.segmentation import REMBG_AVAILABLE
+
+                if REMBG_AVAILABLE:
+                    from rembg import remove
+                    from PIL import Image
+                    import io
+
+                    # Load image
+                    input_image = Image.open(io.BytesIO(final_image_data))
+
+                    # Remove background using RMBG
+                    output_image = remove(input_image)
+
+                    # Save back to bytes
+                    output_buffer = io.BytesIO()
+                    output_image.save(output_buffer, format='PNG')
+                    final_image_data = output_buffer.getvalue()
+
+                    logger.info(f"  Background removed successfully using RMBG")
+                else:
+                    logger.warning("  RMBG not available, skipping background removal")
+                    logger.warning("  Install rembg with: pip install rembg")
+            except Exception as e:
+                logger.error(f"  Background removal failed: {e}")
+                logger.warning("  Continuing with original image")
+
         # Save final image
         job.progress = JobProgress(phase="saving", percent=95)
         output_filename = f"{job.job_id}_{final_filename}"
