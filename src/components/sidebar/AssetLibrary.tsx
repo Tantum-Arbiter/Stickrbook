@@ -61,6 +61,11 @@ export function AssetLibrary({
     const saved = localStorage.getItem('stickrbook-collection-colors');
     return saved ? JSON.parse(saved) : {};
   });
+  const [emptyCollections, setEmptyCollections] = useState<string[]>(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('stickrbook-empty-collections');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [contextMenuCollection, setContextMenuCollection] = useState<string | null>(null);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
 
@@ -108,7 +113,7 @@ export function AssetLibrary({
     return Array.from(tags).sort();
   }, [assets]);
 
-  // Get unique collections from filtered assets (by type)
+  // Get unique collections from filtered assets (by type) + empty collections
   const allCollections = useMemo(() => {
     const collections = new Set<string>();
     assets.forEach((asset) => {
@@ -119,12 +124,16 @@ export function AssetLibrary({
         }
       }
     });
+    // Add empty collections
+    emptyCollections.forEach(c => collections.add(c));
     return Array.from(collections).sort();
-  }, [assets, activeTab]);
+  }, [assets, activeTab, emptyCollections]);
 
-  // Group assets by collection
+  // Group assets by collection (including empty collections)
   const assetsByCollection = useMemo(() => {
     const grouped: Record<string, typeof filteredAssets> = {};
+
+    // Add assets to their collections
     filteredAssets.forEach((asset) => {
       const collection = asset.collection || 'Uncategorized';
       if (!grouped[collection]) {
@@ -132,8 +141,16 @@ export function AssetLibrary({
       }
       grouped[collection].push(asset);
     });
+
+    // Add empty collections with no assets
+    emptyCollections.forEach(collection => {
+      if (!grouped[collection]) {
+        grouped[collection] = [];
+      }
+    });
+
     return grouped;
-  }, [filteredAssets]);
+  }, [filteredAssets, emptyCollections]);
 
   // Count assets by type
   const typeCounts = useMemo(() => {
@@ -198,6 +215,22 @@ export function AssetLibrary({
     setSelectedAssets(new Set());
   }, []);
 
+  // Create empty collection
+  const createEmptyCollection = useCallback(() => {
+    const collectionName = window.prompt('Enter a name for the new collection:');
+    if (!collectionName) return;
+
+    if (allCollections.includes(collectionName)) {
+      toast.error('A collection with this name already exists');
+      return;
+    }
+
+    const newEmptyCollections = [...emptyCollections, collectionName];
+    setEmptyCollections(newEmptyCollections);
+    localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+    toast.success(`Created empty collection "${collectionName}"`);
+  }, [emptyCollections, allCollections, toast]);
+
   // Create collection from selected assets
   const createCollectionFromSelected = useCallback(async () => {
     if (selectedAssets.size === 0) {
@@ -215,13 +248,21 @@ export function AssetLibrary({
           updateAsset(assetId, { collection: collectionName })
         )
       );
+
+      // Remove from empty collections if it was there
+      if (emptyCollections.includes(collectionName)) {
+        const newEmptyCollections = emptyCollections.filter(c => c !== collectionName);
+        setEmptyCollections(newEmptyCollections);
+        localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+      }
+
       toast.success(`Created collection "${collectionName}" with ${selectedAssets.size} assets`);
       clearSelection();
     } catch (error) {
       console.error('Failed to create collection:', error);
       toast.error('Failed to create collection');
     }
-  }, [selectedAssets, updateAsset, toast, clearSelection]);
+  }, [selectedAssets, updateAsset, toast, clearSelection, emptyCollections]);
 
   // Drag and drop handlers
   const handleAssetDragStart = useCallback((asset: Asset, e: React.DragEvent) => {
@@ -241,6 +282,14 @@ export function AssetLibrary({
 
     try {
       await updateAsset(draggedAsset.id, { collection: targetCollection || undefined });
+
+      // Remove from empty collections if it was there
+      if (targetCollection && emptyCollections.includes(targetCollection)) {
+        const newEmptyCollections = emptyCollections.filter(c => c !== targetCollection);
+        setEmptyCollections(newEmptyCollections);
+        localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+      }
+
       const collectionLabel = targetCollection || 'Uncategorized';
       toast.success(`Moved "${draggedAsset.name}" to ${collectionLabel}`);
       setDraggedAsset(null);
@@ -248,7 +297,7 @@ export function AssetLibrary({
       console.error('Failed to move asset:', error);
       toast.error('Failed to move asset');
     }
-  }, [draggedAsset, updateAsset, toast]);
+  }, [draggedAsset, updateAsset, toast, emptyCollections]);
 
   const handleCollectionDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -269,6 +318,13 @@ export function AssetLibrary({
         assetsToUpdate.map(asset => updateAsset(asset.id, { collection: newName }))
       );
 
+      // Update empty collections list if this was an empty collection
+      if (emptyCollections.includes(oldName)) {
+        const newEmptyCollections = emptyCollections.map(c => c === oldName ? newName : c);
+        setEmptyCollections(newEmptyCollections);
+        localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+      }
+
       // Update color mapping
       if (collectionColors[oldName]) {
         const newColors = { ...collectionColors };
@@ -283,7 +339,7 @@ export function AssetLibrary({
       console.error('Failed to rename collection:', error);
       toast.error('Failed to rename collection');
     }
-  }, [assets, updateAsset, collectionColors, toast]);
+  }, [assets, updateAsset, collectionColors, toast, emptyCollections]);
 
   // Delete collection (move assets to Uncategorized)
   const deleteCollection = useCallback(async (collectionName: string) => {
@@ -299,6 +355,13 @@ export function AssetLibrary({
         assetsInCollection.map(asset => updateAsset(asset.id, { collection: undefined }))
       );
 
+      // Remove from empty collections if it was there
+      if (emptyCollections.includes(collectionName)) {
+        const newEmptyCollections = emptyCollections.filter(c => c !== collectionName);
+        setEmptyCollections(newEmptyCollections);
+        localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+      }
+
       // Remove color mapping
       if (collectionColors[collectionName]) {
         const newColors = { ...collectionColors };
@@ -312,7 +375,7 @@ export function AssetLibrary({
       console.error('Failed to delete collection:', error);
       toast.error('Failed to delete collection');
     }
-  }, [assets, updateAsset, collectionColors, toast]);
+  }, [assets, updateAsset, collectionColors, toast, emptyCollections]);
 
   // Set collection color
   const setCollectionColor = useCallback((collectionName: string, color: string) => {
@@ -352,6 +415,14 @@ export function AssetLibrary({
           updateAsset(assetId, { collection: targetCollection || undefined })
         )
       );
+
+      // Remove from empty collections if it was there
+      if (targetCollection && emptyCollections.includes(targetCollection)) {
+        const newEmptyCollections = emptyCollections.filter(c => c !== targetCollection);
+        setEmptyCollections(newEmptyCollections);
+        localStorage.setItem('stickrbook-empty-collections', JSON.stringify(newEmptyCollections));
+      }
+
       const collectionLabel = targetCollection || 'Uncategorized';
       toast.success(`Moved ${selectedAssets.size} assets to ${collectionLabel}`);
       clearSelection();
@@ -360,7 +431,7 @@ export function AssetLibrary({
       console.error('Failed to move assets:', error);
       toast.error('Failed to move assets');
     }
-  }, [selectedAssets, updateAsset, toast, clearSelection]);
+  }, [selectedAssets, updateAsset, toast, clearSelection, emptyCollections]);
 
   return (
     <div className={`asset-library ${className}`}>
@@ -377,6 +448,14 @@ export function AssetLibrary({
             <span className="asset-count">{typeCounts[tab.type] || 0}</span>
           </button>
         ))}
+      </div>
+
+      {/* Create Empty Collection Button */}
+      <div style={{ padding: '8px', paddingBottom: '0' }}>
+        <Button size="small" variant="secondary" onClick={createEmptyCollection} style={{ width: '100%' }}>
+          <Folder size={14} />
+          New Collection
+        </Button>
       </div>
 
       {/* Multi-select Actions */}
