@@ -12,7 +12,6 @@ import { useState } from 'react';
 import { PromptInput } from './PromptInput';
 import { VariationsGrid } from './VariationsGrid';
 import { GenerationControls } from './GenerationControls';
-import { JobQueue } from './JobQueue';
 import { useGenerationStore, useProjectsStore, useToast } from '../../store';
 import { Button } from '../ui/Button';
 import type { Variation } from '../../store/types';
@@ -105,11 +104,6 @@ export function GeneratePanel({ className = '' }: GeneratePanelProps) {
           </div>
         </div>
       </div>
-
-      {/* Job Queue - Bottom Status */}
-      <div className="generate-status">
-        <JobQueue />
-      </div>
     </div>
   );
 }
@@ -147,7 +141,6 @@ export function GenerateToolbar({ className = '' }: { className?: string }) {
       >
         🗑️ Clear
       </Button>
-      <JobQueue />
     </div>
   );
 }

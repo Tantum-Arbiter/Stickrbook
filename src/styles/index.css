@@ -31,6 +31,7 @@
 @import './components/cover-mode.css';
 @import './components/page-timeline.css';
 @import './components/job-queue.css';
+@import './components/floating-job-queue.css';
 
 /* ========== Lucide Icon Alignment ========== */
 /* Global icon styling for consistent alignment */

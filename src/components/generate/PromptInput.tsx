@@ -409,6 +409,21 @@ export function PromptInput({ className = '' }: PromptInputProps) {
 
   return (
     <div className={`prompt-input ${className}`}>
+      {/* Current Book Indicator */}
+      {currentBook ? (
+        <div className="current-book-indicator">
+          <BookOpen size={14} />
+          <span className="book-title">{currentBook.title}</span>
+          <span className="book-badge">Active</span>
+        </div>
+      ) : (
+        <div className="current-book-indicator no-book">
+          <BookOpen size={14} />
+          <span className="book-title">No book selected</span>
+          <span className="book-hint">Select a book from the sidebar to start generating</span>
+        </div>
+      )}
+
       {/* Generation Mode Selector */}
       <div className="generation-modes">
         {GENERATION_MODES.map((m) => (
