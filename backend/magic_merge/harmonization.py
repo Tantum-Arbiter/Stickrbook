@@ -40,12 +40,20 @@ def harmonize_colors(
     
     asset_bytes = base64.b64decode(asset_data)
     bg_bytes = base64.b64decode(background_data)
-    
-    asset_image = Image.open(io.BytesIO(asset_bytes)).convert('RGB')
+
+    asset_image = Image.open(io.BytesIO(asset_bytes))
     bg_image = Image.open(io.BytesIO(bg_bytes)).convert('RGB')
-    
+
+    # Preserve alpha channel if present
+    has_alpha = asset_image.mode == 'RGBA'
+    if has_alpha:
+        alpha_channel = asset_image.split()[3]  # Save alpha
+        asset_rgb = asset_image.convert('RGB')
+    else:
+        asset_rgb = asset_image.convert('RGB')
+
     # Convert to numpy arrays
-    asset_array = np.array(asset_image)
+    asset_array = np.array(asset_rgb)
     bg_array = np.array(bg_image)
     
     # Calculate color statistics
@@ -87,6 +95,14 @@ def harmonize_colors(
     
     # Convert result to base64
     result_image = Image.fromarray(result)
+
+    # Restore alpha channel if original had one
+    if has_alpha:
+        result_rgba = Image.new('RGBA', result_image.size)
+        result_rgba.paste(result_image, (0, 0))
+        result_rgba.putalpha(alpha_channel)
+        result_image = result_rgba
+
     result_buffer = io.BytesIO()
     result_image.save(result_buffer, format='PNG')
     result_base64 = base64.b64encode(result_buffer.getvalue()).decode('utf-8')

@@ -72,8 +72,14 @@ def composite_images(
         bg_array = add_shadow(bg_array, mask_array, position, shadow)
 
     # Composite using Poisson blending or alpha blending
+    # NOTE: Poisson blending can cause ghosting with transparent characters
+    # Use alpha blending for better color preservation
     if seam_blending and cv2 is not None:
-        result = poisson_blend(asset_array, bg_array, mask_array, position, blend_mode)
+        try:
+            result = poisson_blend(asset_array, bg_array, mask_array, position, blend_mode)
+        except Exception as e:
+            print(f"Poisson blending failed: {e}, using alpha blend")
+            result = alpha_blend(asset_array, bg_array, mask_array, position)
     else:
         result = alpha_blend(asset_array, bg_array, mask_array, position)
 
@@ -93,7 +99,7 @@ def poisson_blend(
     target: np.ndarray,
     mask: np.ndarray,
     position: Dict[str, int],
-    blend_mode: str = 'mixed'
+    blend_mode: str = 'normal'
 ) -> np.ndarray:
     """
     Seamless Poisson blending using OpenCV with improved quality
@@ -103,7 +109,7 @@ def poisson_blend(
         target: Target/background image array (RGB)
         mask: Binary mask array
         position: {'x': int, 'y': int} center position
-        blend_mode: 'mixed' (default), 'monochrome', or 'normal'
+        blend_mode: 'normal' (default - best for characters), 'mixed', or 'monochrome'
 
     Returns:
         Blended image array
@@ -119,14 +125,23 @@ def poisson_blend(
         mask_refined = cv2.resize(mask_refined, (source.shape[1], source.shape[0]))
 
     try:
-        # Try MIXED_CLONE first (best for preserving details)
-        if blend_mode == 'mixed':
+        # Use NORMAL_CLONE by default - best for character compositing
+        # MIXED_CLONE can cause ghosting with transparent characters
+        if blend_mode == 'normal':
             result = cv2.seamlessClone(
                 source,
                 target,
                 mask_refined,
                 center,
-                cv2.MIXED_CLONE  # Preserves texture better than NORMAL_CLONE
+                cv2.NORMAL_CLONE  # Best for preserving colors
+            )
+        elif blend_mode == 'mixed':
+            result = cv2.seamlessClone(
+                source,
+                target,
+                mask_refined,
+                center,
+                cv2.MIXED_CLONE  # Preserves texture but can ghost
             )
         elif blend_mode == 'monochrome':
             result = cv2.seamlessClone(
@@ -142,7 +157,7 @@ def poisson_blend(
                 target,
                 mask_refined,
                 center,
-                cv2.NORMAL_CLONE  # Original method
+                cv2.NORMAL_CLONE
             )
         return result
     except Exception as e:
@@ -150,13 +165,13 @@ def poisson_blend(
         return enhanced_alpha_blend(source, target, mask_refined, position)
 
 
-def refine_mask_for_blending(mask: np.ndarray, feather: int = 2) -> np.ndarray:
+def refine_mask_for_blending(mask: np.ndarray, feather: int = 0) -> np.ndarray:
     """
     Refine mask for better blending quality
 
     Args:
         mask: Input mask array
-        feather: Feather amount in pixels (default: 2)
+        feather: Feather amount in pixels (default: 0 - no feathering for Poisson)
 
     Returns:
         Refined binary mask
@@ -167,17 +182,18 @@ def refine_mask_for_blending(mask: np.ndarray, feather: int = 2) -> np.ndarray:
 
     # Use simple threshold (NOT adaptive - that corrupts RMBG masks!)
     # RMBG produces high-quality alpha masks that should be preserved
-    _, mask_binary = cv2.threshold(mask, 10, 255, cv2.THRESH_BINARY)
+    # Higher threshold to ensure only solid areas are included
+    _, mask_binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
 
     # Clean up noise with morphological operations (minimal)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     mask_binary = cv2.morphologyEx(mask_binary, cv2.MORPH_CLOSE, kernel)
 
-    # Slight feathering for smoother edges
-    if feather > 0:
-        mask_binary = cv2.GaussianBlur(mask_binary, (feather*2+1, feather*2+1), 0)
-        # Re-threshold to maintain binary mask
-        _, mask_binary = cv2.threshold(mask_binary, 127, 255, cv2.THRESH_BINARY)
+    # Erode slightly to avoid edge artifacts in Poisson blending
+    mask_binary = cv2.erode(mask_binary, kernel, iterations=1)
+
+    # NO feathering for Poisson blending - it needs hard edges
+    # Feathering causes ghosting in seamlessClone
 
     return mask_binary
 

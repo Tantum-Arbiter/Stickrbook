@@ -76,7 +76,7 @@ class MagicMergeRequest(BaseModel):
     harmonize: bool = True
     harmonizeStrength: float = 0.5  # Reduced default for more natural results
     shadow: Optional[Dict] = None
-    blendMode: str = 'mixed'  # 'mixed' (best detail), 'monochrome' (best color), 'normal' (balanced)
+    blendMode: str = 'normal'  # 'normal' (best for characters), 'mixed' (detail but can ghost), 'monochrome' (color match)
 
 
 class MagicMergeResponse(BaseModel):
