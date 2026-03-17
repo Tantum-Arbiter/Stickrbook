@@ -1,6 +1,6 @@
-# StickrBook - Grow with Freya
+# StickrBook
 
-A children's storybook creation tool with AI-powered image generation.
+An AI-powered photo editor and storybook creation tool with advanced image generation capabilities.
 
 ## 🚀 Quick Start
 
@@ -207,8 +207,4 @@ See [backend/README.md](backend/README.md) for complete backend documentation an
 ## 📄 License
 
 MIT
-
-## 👥 Author
-
-Grow with Freya
 

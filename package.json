@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "StickrBook - Grow with Freya",
+  "description": "StickrBook - AI-powered photo editor and storybook creator",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -26,7 +26,7 @@
     "typescript",
     "vite"
   ],
-  "author": "Grow with Freya",
+  "author": "StickrBook",
   "license": "MIT",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
