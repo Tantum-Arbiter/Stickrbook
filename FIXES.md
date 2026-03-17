@@ -1,113 +1,151 @@
 # Bug Fixes - March 17, 2026
 
-## Issues Reported
+## Summary
 
-1. **Project creation not appearing** - When creating a project, it doesn't show up in the project list
-2. **Theme info box styling** - The storybook theme description box has a white background instead of matching the dark UI theme
-
-## Fixes Applied
-
-### 1. Theme Info Box Styling ✅
-
-**File**: `src/components/generate/PromptInput.tsx` (lines 438-453)
-
-**Changes**:
-- Changed `background` from `#f5f5f5` (light gray) to `var(--bg-card)` (dark theme card background)
-- Added `border: '1px solid var(--border)'` for consistency
-- Changed `borderRadius` to use CSS variable `var(--radius-sm)`
-- Added `color: 'var(--text)'` for text color
-- Made theme label use `var(--accent)` color (teal)
-- Made description use `var(--text-muted)` color
-
-**Result**: The theme info box now matches the dark UI theme with proper colors and borders.
+All critical issues for Mock Mode have been resolved! The app now works fully without a backend.
 
 ---
 
-### 2. Project Creation Debugging 🔍
+## Issue 1: 502 Bad Gateway - MSW Service Worker Missing ✅
 
-**Files Modified**:
-- `src/mocks/browser.ts` - Added MSW request/response logging
-- `src/store/projectsStore.ts` - Added console logging for project creation flow
+**Status:** FIXED
+**Commit:** `92d9124`
 
-**Debugging Added**:
-```javascript
-// MSW logs will show:
-[MSW] Intercepted: POST http://localhost:5173/v1/storyboard/projects
-[MSW] Mocked response for: POST http://localhost:5173/v1/storyboard/projects 200
+### Problem
+The app returned 502 Bad Gateway errors for all API calls, even with `VITE_USE_MOCKS=true` set.
 
-// Project store logs will show:
-[ProjectStore] Creating project: { name: "...", description: "..." }
-[ProjectStore] API response: { project: {...} }
-[ProjectStore] Transformed project: {...}
-[ProjectStore] Project added to state
-```
+### Root Cause
+MSW (Mock Service Worker) requires a service worker file (`mockServiceWorker.js`) in the `public/` directory to intercept network requests. This file was missing.
 
-**How to Test**:
-1. Open browser console (F12)
-2. Click "New Project" button in the sidebar
-3. Enter a project name
-4. Watch the console for logs
-5. Check if the project appears in the project list
+### Solution
+Ran `npx msw init public/` to generate the required service worker file.
 
-**Possible Issues**:
-- MSW might not be intercepting the request correctly
-- The project list component might not be re-rendering
-- The API response format might not match what the store expects
+### Files Changed
+- `public/mockServiceWorker.js` (created)
+- `package.json` (updated with msw.workerDirectory)
 
 ---
 
-## Testing Instructions
+## Issue 2: Theme Info Box - White Background ✅
 
-### Test 1: Theme Info Box
-1. Open http://localhost:5173
-2. Look at the "Generate" panel
-3. Click the "📖 Storybook Theme (Art Style)" dropdown
-4. Select any theme (e.g., "🧚 Classic Fairy Tale")
-5. **Expected**: A dark-themed info box appears below with teal accent color
-6. **Before**: Box had white background
-7. **After**: Box has dark background matching the UI
+**Status:** FIXED
+**Commit:** `3a06d48`
 
-### Test 2: Project Creation
-1. Open browser console (F12 → Console tab)
-2. Click the sidebar (left side)
-3. Look for a "New Project" or "+" button
-4. Click it and enter a project name (e.g., "Test Project")
-5. **Watch console for**:
-   - `[MSW] Intercepted: POST ...`
-   - `[ProjectStore] Creating project: ...`
-   - `[ProjectStore] Project added to state`
-6. **Expected**: Project appears in the project list
-7. **If not**: Check console for errors
+### Problem
+The storybook theme description box displayed with a white background, inconsistent with the dark theme.
+
+### Root Cause
+The info box used hardcoded light colors instead of CSS variables.
+
+### Solution
+Updated styling to use theme CSS variables:
+- `background: 'var(--bg-card)'`
+- `border: '1px solid var(--border)'`
+- `color: 'var(--text)'`
+
+### Files Changed
+- `src/components/generate/PromptInput.tsx`
 
 ---
 
-## Next Steps
+## Issue 3: No UI to Create Books ✅
 
-If project creation still doesn't work:
+**Status:** FIXED
+**Commit:** `a23be2e`
 
-1. **Check MSW is enabled**:
-   - Verify `.env` has `VITE_USE_MOCKS=true`
-   - Look for `[MSW]` logs in console
+### Problem
+Users could create projects but had no way to create books within those projects.
 
-2. **Check the project list component**:
-   - It might not be subscribing to store updates
-   - Try refreshing the page after creating a project
+### Root Cause
+The `ProjectTree` component displayed books but lacked a "+ New Book" button.
 
-3. **Check the API response format**:
-   - The mock might be returning data in a different format than expected
-   - Compare mock response with what the store expects
+### Solution
+Added a "+ New Book" button to each project that:
+- Prompts for book title
+- Creates book with default preset
+- Shows success/error toast notifications
 
-4. **Potential fix needed**:
-   - The `ProjectTree` component might need to use Zustand's `useProjectsStore` hook properly
-   - The component might not be re-rendering when projects change
+### Files Changed
+- `src/components/sidebar/ProjectTree.tsx`
 
 ---
 
-## Files Changed
+## Issue 4: App Keeps Asking to Select a Book ✅
 
+**Status:** FIXED
+**Commit:** `16f90db`
+
+### Problem
+After creating a book, the app still showed "Please create or select a book first" when generating images.
+
+### Root Cause
+The `createBook` function set `currentBookId` but not `currentProjectId`. The `currentBook()` selector requires both:
+1. Find current project using `currentProjectId`
+2. Find book within that project using `currentBookId`
+
+Without `currentProjectId`, it couldn't find the project, so it couldn't find the book.
+
+### Solution
+Added `currentProjectId: projectId` to the state update when creating a book.
+
+### Files Changed
+- `src/store/projectsStore.ts`
+
+---
+
+## Issue 5: 502 Bad Gateway When Polling Job Status ✅
+
+**Status:** FIXED
+**Commit:** `cfde281`
+
+### Problem
+After clicking "Generate", the app polled for job status and got 502 Bad Gateway errors.
+
+### Root Cause
+MSW handlers listened for `/v1/jobs/:jobId` but the API client called `/v1/storyboard/jobs/:jobId` (because `API_BASE = '/v1/storyboard'`).
+
+### Solution
+Updated MSW handlers to match the full API path:
+- Changed `/v1/jobs/:jobId` → `/v1/storyboard/jobs/:jobId`
+- Changed `/v1/jobs/:jobId` (DELETE) → `/v1/storyboard/jobs/:jobId`
+
+### Files Changed
+- `src/test/mocks/handlers.ts`
+
+---
+
+## Complete Workflow Test
+
+1. **Refresh browser** at http://localhost:5173
+2. **Create a project:**
+   - Click "+ New" in Projects section
+   - Enter project name
+   - Verify project appears in sidebar
+3. **Create a book:**
+   - Expand the project
+   - Click "+ New Book"
+   - Enter book title
+   - Verify book appears and is selected
+4. **Generate images:**
+   - Go to Generate tab
+   - Select a storybook theme
+   - Enter a prompt
+   - Click "Generate"
+   - Verify 4 placeholder images appear (no 502 errors)
+5. **Verify theme:**
+   - Check that the theme info box has dark background
+
+---
+
+## All Files Changed
+
+- `public/mockServiceWorker.js` - MSW service worker (created)
 - `src/components/generate/PromptInput.tsx` - Theme box styling
-- `src/mocks/browser.ts` - MSW logging
-- `src/store/projectsStore.ts` - Debug logging
+- `src/components/sidebar/ProjectTree.tsx` - Book creation UI
+- `src/store/projectsStore.ts` - Auto-select project when creating book
+- `src/test/mocks/handlers.ts` - Fixed job endpoint paths
+- `src/mocks/browser.ts` - MSW logging (debugging)
+- `package.json` - MSW configuration
 
 All changes have been committed and pushed to the repository.
 
