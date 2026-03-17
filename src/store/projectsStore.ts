@@ -137,15 +137,20 @@ export const useProjectsStore = create<ProjectState>((set, get) => ({
   createProject: async (name: string, description?: string) => {
     set({ isLoading: true, error: null });
     try {
+      console.log('[ProjectStore] Creating project:', { name, description });
       const response = await projectsApi.create({ name, description });
+      console.log('[ProjectStore] API response:', response);
       const project = transformProject(response.project as unknown as Record<string, unknown>);
+      console.log('[ProjectStore] Transformed project:', project);
       set((state) => ({
         projects: [...state.projects, project],
         currentProjectId: project.id,
         isLoading: false,
       }));
+      console.log('[ProjectStore] Project added to state');
       return project;
     } catch (error) {
+      console.error('[ProjectStore] Failed to create project:', error);
       const message = error instanceof ApiClientError ? error.detail || error.message : 'Failed to create project';
       set({ error: message, isLoading: false });
       throw error;

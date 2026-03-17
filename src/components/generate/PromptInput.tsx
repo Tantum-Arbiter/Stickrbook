@@ -438,13 +438,15 @@ export function PromptInput({ className = '' }: PromptInputProps) {
       {selectedTheme && (
         <div className="theme-info" style={{
           padding: '8px 12px',
-          background: 'var(--bg-secondary, #f5f5f5)',
-          borderRadius: '6px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
           fontSize: '0.85rem',
-          marginBottom: '12px'
+          marginBottom: '12px',
+          color: 'var(--text)'
         }}>
-          <strong>{STORYBOOK_THEMES[selectedTheme].label}</strong>
-          <p style={{ margin: '4px 0 0 0', opacity: 0.8 }}>
+          <strong style={{ color: 'var(--accent)' }}>{STORYBOOK_THEMES[selectedTheme].label}</strong>
+          <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)' }}>
             {STORYBOOK_THEMES[selectedTheme].description}
           </p>
         </div>
