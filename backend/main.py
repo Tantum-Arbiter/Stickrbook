@@ -549,6 +549,7 @@ async def job_events(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
 
     async def event_generator():
+        import json
         last_status = None
         last_progress = None
 
@@ -560,42 +561,47 @@ async def job_events(job_id: str):
             # Send status updates
             if current_job.status != last_status:
                 last_status = current_job.status
-                yield {
-                    "event": "status",
-                    "data": {"status": current_job.status.value}
-                }
+                # Yield properly formatted SSE event
+                data_json = json.dumps({"status": current_job.status.value})
+                yield f"event: status\ndata: {data_json}\n\n"
 
             # Send progress updates
             if current_job.progress and current_job.progress != last_progress:
                 last_progress = current_job.progress
-                yield {
-                    "event": "progress",
-                    "data": {
-                        "phase": current_job.progress.phase,
-                        "percent": current_job.progress.percent
-                    }
-                }
+                # Yield properly formatted SSE event
+                data_json = json.dumps({
+                    "phase": current_job.progress.phase,
+                    "percent": current_job.progress.percent
+                })
+                yield f"event: progress\ndata: {data_json}\n\n"
 
             # Check if job is done
             if current_job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
                 if current_job.status == JobStatus.COMPLETED:
-                    yield {
-                        "event": "completed",
-                        "data": {"file_ids": [o.file_id for o in current_job.outputs]}
-                    }
+                    # Yield properly formatted SSE event
+                    data_json = json.dumps({"file_ids": [o.file_id for o in current_job.outputs]})
+                    yield f"event: completed\ndata: {data_json}\n\n"
                 elif current_job.status == JobStatus.FAILED:
-                    yield {
-                        "event": "failed",
-                        "data": {
-                            "error_code": current_job.error_code,
-                            "message": current_job.error_message
-                        }
-                    }
+                    # Yield properly formatted SSE event
+                    data_json = json.dumps({
+                        "error_code": current_job.error_code,
+                        "message": current_job.error_message
+                    })
+                    yield f"event: failed\ndata: {data_json}\n\n"
                 break
 
             await asyncio.sleep(0.5)
 
-    return EventSourceResponse(event_generator())
+    # Return as StreamingResponse with text/event-stream content type
+    from starlette.responses import StreamingResponse
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 
 # ============================================================
