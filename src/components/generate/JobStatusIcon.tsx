@@ -44,12 +44,13 @@ export function JobStatusIcon({ className = '' }: JobStatusIconProps) {
   const runningJobs = activeJobs.filter((j) => j.status === 'running' || j.status === 'generating').length;
   const queuedJobs = activeJobs.filter((j) => j.status === 'pending' || j.status === 'queued').length;
   const failedJobs = activeJobs.filter((j) => j.status === 'failed').length;
-  const completedJobs = jobHistory.filter((j) => j.status === 'completed').length;
+  const completedJobs = jobHistory.filter((j) => j.status === 'complete' || j.status === 'completed').length;
+  const failedHistoryJobs = jobHistory.filter((j) => j.status === 'failed').length;
 
   const totalActive = activeJobs.length;
-  const hasJobs = totalActive > 0 || completedJobs > 0;
+  const hasJobs = totalActive > 0 || jobHistory.length > 0;
 
-  // Don't render if no jobs
+  // Always render the icon if there's any job history (for viewing history)
   if (!hasJobs) return null;
 
   // Determine icon and color based on status
@@ -76,8 +77,12 @@ export function JobStatusIcon({ className = '' }: JobStatusIconProps) {
   const currentJob = activeJobs.find((j) => j.status === 'running' || j.status === 'generating');
 
   // High-level summary for hover tooltip
-  const totalJobs = totalActive + completedJobs;
-  const successRate = totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0;
+  const totalJobs = totalActive + jobHistory.length;
+  const totalSuccessful = completedJobs;
+  const totalFailed = failedJobs + failedHistoryJobs;
+  const successRate = (totalSuccessful + totalFailed) > 0
+    ? Math.round((totalSuccessful / (totalSuccessful + totalFailed)) * 100)
+    : 0;
   const estimatedTimeRemaining = runningJobs > 0 && currentJob
     ? Math.round((100 - currentJob.progress) / currentJob.progress * 2) // Rough estimate in minutes
     : null;

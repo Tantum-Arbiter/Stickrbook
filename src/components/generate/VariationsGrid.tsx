@@ -79,7 +79,8 @@ export function VariationsGrid({
   const handleSave = async (variation: Variation) => {
     try {
       await saveVariation(variation.id);
-      onSave?.(variation);
+      // Don't call onSave callback - it would trigger a duplicate save
+      // The saveVariation function already handles the save operation
     } catch (error) {
       console.error('Failed to save variation:', error);
     }

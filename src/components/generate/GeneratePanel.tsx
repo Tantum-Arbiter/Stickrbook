@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { PromptInput } from './PromptInput';
 import { VariationsGrid } from './VariationsGrid';
 import { GenerationControls } from './GenerationControls';
-import { useGenerationStore, useProjectsStore, useToast } from '../../store';
+import { useGenerationStore, useProjectsStore, useToast, useEditorStore, useUIStore } from '../../store';
 import { Button } from '../ui/Button';
 import type { Variation } from '../../store/types';
 
@@ -29,6 +29,8 @@ export function GeneratePanel({ className = '' }: GeneratePanelProps) {
     const project = s.currentProject();
     return project?.books.find((b) => b.id === currentBookId);
   });
+  const setBaseImage = useEditorStore((s) => s.setBaseImage);
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
   const toast = useToast();
 
   const selectedVariation = variations.find((v) => v.id === selectedVariationId);
@@ -47,14 +49,17 @@ export function GeneratePanel({ className = '' }: GeneratePanelProps) {
     }
   };
 
-  const handleUseVariation = async (_variation: Variation) => {
+  const handleUseVariation = async (variation: Variation) => {
     if (!currentBook) {
       toast.warning('Please select a book first');
       return;
     }
 
-    // This would typically integrate with the editor
-    toast.info('Variation selected - switch to Edit tab to use');
+    // Load the variation image into the editor as the base image
+    setBaseImage(variation.imagePath);
+    // Switch to the Edit tab
+    setActiveTab('edit');
+    toast.success('Image loaded into editor');
   };
 
   return (
