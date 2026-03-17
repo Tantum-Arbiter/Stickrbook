@@ -1,0 +1,27 @@
+# Magic Merge AI Dependencies
+# Install with: pip install -r requirements-ai.txt
+#
+# These are optional heavy dependencies for AI-powered Magic Merge.
+# Total size: ~2-3GB (models will be downloaded on first use)
+# Cost: $0.00 (all open source)
+#
+# For GPU acceleration, install PyTorch with CUDA:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# Background Removal (RMBG-v1.4)
+rembg>=2.0.50
+
+# Scene Analysis (CLIP, Depth-Anything)
+transformers>=4.35.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image Processing
+opencv-python-headless>=4.8.0
+scikit-learn>=1.3.0
+scipy>=1.11.0
+
+# Optional: Accelerate inference
+# accelerate>=0.24.0
+# optimum>=1.14.0
+

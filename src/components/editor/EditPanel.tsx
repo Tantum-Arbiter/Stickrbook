@@ -6,9 +6,11 @@
  * - Page Tabs Bar
  * - Editor Main: Canvas Area + Layers Panel + Effects Panel
  * - Editor Info Bar (bottom)
+ *
+ * Now includes toggle for advanced PhotoEditor mode.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, lazy, Suspense } from 'react';
 import { EditorCanvas } from './EditorCanvas';
 import { LayerPanel } from './LayerPanel';
 import { ToolBar } from './ToolBar';
@@ -18,7 +20,10 @@ import { EffectsPanel } from './EffectsPanel';
 import { CompositionGrid } from './CompositionGrid';
 import { useEditorStore, useProjectsStore, useToast } from '../../store';
 import type { Selection, LayerOverlay } from '../../store/types';
-import { ImagePlus, Keyboard } from 'lucide-react';
+import { ImagePlus, Keyboard, Sparkles } from 'lucide-react';
+
+// Lazy load the advanced photo editor
+const PhotoEditor = lazy(() => import('../../editor').then(m => ({ default: m.PhotoEditor })));
 
 export interface EditPanelProps {
   className?: string;
@@ -26,6 +31,7 @@ export interface EditPanelProps {
 
 export function EditPanel({ className = '' }: EditPanelProps) {
   const [compositionGrid, setCompositionGrid] = useState('none');
+  const [useAdvancedEditor, setUseAdvancedEditor] = useState(false);
   const { zoom, selection, canvasWidth, canvasHeight, savePage, history, historyIndex, baseImagePath } = useEditorStore();
   const currentPage = useProjectsStore((s) => s.currentPage());
   const currentBook = useProjectsStore((s) => s.currentBook());
@@ -79,6 +85,33 @@ export function EditPanel({ className = '' }: EditPanelProps) {
       toast.error('Failed to create page');
     }
   }, [currentBook, pages.length, createPage, toast]);
+
+  // If advanced editor is enabled and we have an image, show PhotoEditor
+  if (useAdvancedEditor && baseImagePath) {
+    return (
+      <div className={`production-editor advanced-mode ${className}`}>
+        <div className="editor-mode-toggle">
+          <button
+            className="mode-toggle-btn"
+            onClick={() => setUseAdvancedEditor(false)}
+            title="Switch to basic editor"
+          >
+            ← Basic Editor
+          </button>
+          <span className="mode-label">
+            <Sparkles size={14} /> Advanced Photo Editor
+          </span>
+        </div>
+        <Suspense fallback={<div className="editor-loading">Loading advanced editor...</div>}>
+          <PhotoEditor
+            documentId={currentPage?.id}
+            width={canvasWidth}
+            height={canvasHeight}
+          />
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <div className={`production-editor ${className}`}>
@@ -138,6 +171,19 @@ export function EditPanel({ className = '' }: EditPanelProps) {
                   <li>Click any asset in the <strong>Assets</strong> panel (left) to edit it here</li>
                 </ol>
                 <p className="placeholder-hint">You can drag additional assets onto the canvas to add layers</p>
+                <div className="placeholder-advanced">
+                  <button
+                    className="advanced-editor-btn"
+                    onClick={() => setUseAdvancedEditor(true)}
+                    disabled={!baseImagePath}
+                    title="Switch to advanced photo editor with AI-powered Magic Merge"
+                  >
+                    <Sparkles size={16} /> Try Advanced Editor
+                  </button>
+                  <p className="advanced-hint">
+                    Includes AI-powered Magic Merge for seamless compositing
+                  </p>
+                </div>
               </div>
             )}
           </div>

@@ -35,6 +35,9 @@ from validator import validate_image, ValidationResult
 # Storyboard module
 from storyboard.routes import router as storyboard_router, set_dependencies as set_storyboard_deps
 
+# Magic Merge module
+from magic_merge.routes import router as magic_merge_router
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -280,6 +283,9 @@ if os.path.exists(STATIC_DIR):
 
 # Include storyboard router
 app.include_router(storyboard_router)
+
+# Include Magic Merge router
+app.include_router(magic_merge_router)
 
 
 # GUI home page
