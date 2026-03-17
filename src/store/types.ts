@@ -320,6 +320,7 @@ export interface GenerationState {
   cfgScale: number;
   width: number;
   height: number;
+  variationCount: number;
 
   // Character reference
   characterId: string | null;
@@ -328,6 +329,8 @@ export interface GenerationState {
   // Variations
   variations: Variation[];
   selectedVariationId: string | null;
+  compareMode: boolean;
+  compareSelection: string[];
 
   // Jobs
   activeJobs: GenerationJob[];
@@ -346,6 +349,12 @@ export interface GenerationState {
   setCfgScale: (cfg: number) => void;
   setDimensions: (width: number, height: number) => void;
   setCharacter: (id: string | null, weight?: number) => void;
+  setVariationCount: (count: number) => void;
+
+  // Compare mode actions
+  toggleCompareMode: () => void;
+  toggleCompareSelection: (id: string) => void;
+  clearCompareSelection: () => void;
 
   // Generation actions
   generateVariations: () => Promise<void>;

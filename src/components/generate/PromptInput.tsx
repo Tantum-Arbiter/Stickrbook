@@ -254,11 +254,13 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     characterId,
     ipadapterWeight,
     isGenerating,
+    variationCount,
     setMode,
     setWorkflowType,
     setPrompt,
     setNegativePrompt,
     setCharacter,
+    setVariationCount,
     generateVariations,
   } = useGenerationStore();
 
@@ -465,6 +467,36 @@ export function PromptInput({ className = '' }: PromptInputProps) {
           </option>
         ))}
       </Select>
+
+      {/* Variation Count Selector */}
+      <div className="form-group">
+        <label htmlFor="variation-count">Number of Variations</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <input
+            id="variation-count"
+            type="range"
+            min="1"
+            max="12"
+            value={variationCount}
+            onChange={(e) => setVariationCount(parseInt(e.target.value))}
+            disabled={isGenerating}
+            style={{ flex: 1 }}
+          />
+          <input
+            type="number"
+            min="1"
+            max="12"
+            value={variationCount}
+            onChange={(e) => setVariationCount(parseInt(e.target.value) || 1)}
+            disabled={isGenerating}
+            style={{ width: '60px' }}
+            className="input"
+          />
+        </div>
+        <span className="input-helper">
+          Generate {variationCount} variation{variationCount !== 1 ? 's' : ''} (jobs will run sequentially)
+        </span>
+      </div>
 
       {/* Template Guidance (mode-specific) */}
       <div className="template-guidance">

@@ -33,6 +33,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   cfgScale: 5.5,
   width: DEFAULT_WIDTH,
   height: DEFAULT_HEIGHT,
+  variationCount: 4, // Number of variations to generate
 
   // Character reference
   characterId: null,
@@ -41,6 +42,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // Variations
   variations: [],
   selectedVariationId: null,
+  compareMode: false, // Whether compare mode is active
+  compareSelection: [], // IDs of variations selected for comparison (max 4)
 
   // Jobs
   activeJobs: [],
@@ -89,6 +92,34 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     });
   },
 
+  setVariationCount: (count: number) => {
+    set({ variationCount: Math.max(1, Math.min(12, count)) }); // Limit between 1-12
+  },
+
+  // Compare mode actions
+  toggleCompareMode: () => {
+    set((state) => ({
+      compareMode: !state.compareMode,
+      compareSelection: !state.compareMode ? [] : state.compareSelection,
+    }));
+  },
+
+  toggleCompareSelection: (id: string) => {
+    set((state) => {
+      const isSelected = state.compareSelection.includes(id);
+      if (isSelected) {
+        return { compareSelection: state.compareSelection.filter((vid) => vid !== id) };
+      } else if (state.compareSelection.length < 4) {
+        return { compareSelection: [...state.compareSelection, id] };
+      }
+      return state; // Max 4 selections
+    });
+  },
+
+  clearCompareSelection: () => {
+    set({ compareSelection: [], compareMode: false });
+  },
+
   // Generation actions
   generateVariations: async () => {
     const state = get();
@@ -115,7 +146,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         character_id: state.characterId || undefined,
         ipadapter_weight: state.ipadapterWeight,
         mode: state.mode,
-        count: 4, // Generate 4 variations
+        count: state.variationCount, // Use user-selected count
       });
 
       // Create jobs from response
@@ -138,9 +169,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         activeJobs: [...s.activeJobs, ...jobs],
         variations: [], // Clear previous variations
         selectedVariationId: null,
+        compareSelection: [], // Clear compare selection
       }));
 
-      // Subscribe to SSE for each job
+      // Subscribe to SSE for each job (they will run sequentially on backend)
       jobs.forEach((job) => {
         get().subscribeToJob(job.id);
       });

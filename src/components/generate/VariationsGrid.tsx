@@ -1,13 +1,15 @@
 /**
  * VariationsGrid Component
  *
- * 4-panel grid displaying generated variations with selection and actions.
- * Uses extracted CSS from legacy storyboard (variation-grid.css).
+ * Dynamic grid displaying generated variations with selection and actions.
+ * Supports responsive layout, scrolling, and compare mode.
  */
 
 import { useState } from 'react';
 import { useGenerationStore } from '../../store';
 import { Button } from '../ui/Button';
+import { CompareModal } from './CompareModal';
+import { GitCompare } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
 
 export interface VariationsGridProps {
@@ -27,22 +29,42 @@ export function VariationsGrid({
     variations,
     selectedVariationId,
     activeJobs,
+    variationCount,
+    compareMode,
+    compareSelection,
     selectVariation,
     saveVariation,
+    toggleCompareMode,
+    toggleCompareSelection,
+    clearCompareSelection,
   } = useGenerationStore();
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
-  // Create 4 slots - fill with variations or jobs
-  const slots = Array.from({ length: 4 }, (_, index) => {
+  // Create slots based on variation count - fill with variations or jobs
+  const totalSlots = Math.max(variationCount, variations.length, activeJobs.length);
+  const slots = Array.from({ length: totalSlots }, (_, index) => {
     const variation = variations[index];
     const job = activeJobs[index];
     return { index, variation, job };
   });
 
+  // Determine grid columns based on number of items
+  const getGridColumns = () => {
+    if (totalSlots <= 2) return 2;
+    if (totalSlots <= 4) return 2;
+    if (totalSlots <= 6) return 3;
+    return 4;
+  };
+
   const handleSelect = (variation: Variation) => {
-    selectVariation(variation.id);
-    onSelect?.(variation);
+    if (compareMode) {
+      toggleCompareSelection(variation.id);
+    } else {
+      selectVariation(variation.id);
+      onSelect?.(variation);
+    }
   };
 
   const handleSave = async (variation: Variation) => {
@@ -63,9 +85,71 @@ export function VariationsGrid({
     setPreviewImage(null);
   };
 
+  const handleCompare = () => {
+    if (compareSelection.length > 0) {
+      setShowCompareModal(true);
+    }
+  };
+
+  const handleCloseCompare = () => {
+    setShowCompareModal(false);
+    clearCompareSelection();
+  };
+
+  const compareVariations = variations.filter(v => compareSelection.includes(v.id));
+
   return (
     <>
-      <div className={`variation-grid ${className}`}>
+      {/* Compare Mode Controls */}
+      {variations.length > 1 && (
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '12px',
+          alignItems: 'center',
+          padding: '8px',
+          background: 'var(--bg-card)',
+          borderRadius: 'var(--radius-sm)',
+        }}>
+          <Button
+            size="small"
+            variant={compareMode ? 'primary' : 'secondary'}
+            onClick={toggleCompareMode}
+          >
+            <GitCompare size={16} />
+            {compareMode ? 'Exit Compare' : 'Compare Mode'}
+          </Button>
+          {compareMode && (
+            <>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Select up to 4 variations to compare ({compareSelection.length}/4)
+              </span>
+              {compareSelection.length > 0 && (
+                <Button
+                  size="small"
+                  variant="primary"
+                  onClick={handleCompare}
+                >
+                  Compare {compareSelection.length} Selected
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Variations Grid - Responsive and Scrollable */}
+      <div
+        className={`variation-grid ${className}`}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${getGridColumns()}, 1fr)`,
+          gap: '16px',
+          maxHeight: 'calc(100vh - 300px)',
+          overflowY: totalSlots > 8 ? 'auto' : 'visible',
+          padding: '4px',
+        }}
+      >
         {slots.map(({ index, variation, job }) => (
           <VariationCard
             key={index}
@@ -73,6 +157,8 @@ export function VariationsGrid({
             variation={variation}
             job={job}
             isSelected={variation?.id === selectedVariationId}
+            isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
+            compareMode={compareMode}
             onSelect={handleSelect}
             onSave={handleSave}
             onEnlarge={handleEnlarge}
@@ -89,6 +175,14 @@ export function VariationsGrid({
           <img src={previewImage} alt="Preview" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+
+      {/* Compare Modal */}
+      {showCompareModal && (
+        <CompareModal
+          variations={compareVariations}
+          onClose={handleCloseCompare}
+        />
+      )}
     </>
   );
 }
@@ -99,6 +193,8 @@ interface VariationCardProps {
   variation?: Variation;
   job?: GenerationJob;
   isSelected: boolean;
+  isCompareSelected: boolean;
+  compareMode: boolean;
   onSelect: (variation: Variation) => void;
   onSave: (variation: Variation) => void;
   onEnlarge: (variation: Variation) => void;
@@ -109,6 +205,8 @@ function VariationCard({
   variation,
   job,
   isSelected,
+  isCompareSelected,
+  compareMode,
   onSelect,
   onSave,
   onEnlarge,
@@ -145,29 +243,61 @@ function VariationCard({
   // Show variation
   return (
     <div
-      className={`variation-card ${isSelected ? 'selected' : ''}`}
+      className={`variation-card ${isSelected ? 'selected' : ''} ${isCompareSelected ? 'compare-selected' : ''}`}
       onClick={() => onSelect(variation)}
+      style={{
+        position: 'relative',
+        cursor: compareMode ? 'pointer' : 'default',
+      }}
     >
+      {/* Compare Mode Checkbox */}
+      {compareMode && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            zIndex: 10,
+            background: 'var(--bg-card)',
+            borderRadius: '4px',
+            padding: '4px',
+            border: '2px solid var(--border)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={isCompareSelected}
+            onChange={() => onSelect(variation)}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+          />
+        </div>
+      )}
+
       <img src={variation.imagePath} alt={`Variation ${index + 1}`} />
 
       <span className="seed-badge">Seed: {variation.seed}</span>
 
-      <button
-        className="enlarge-btn"
-        onClick={(e) => { e.stopPropagation(); onEnlarge(variation); }}
-        title="Enlarge"
-      >
-        🔍
-      </button>
+      {!compareMode && (
+        <>
+          <button
+            className="enlarge-btn"
+            onClick={(e) => { e.stopPropagation(); onEnlarge(variation); }}
+            title="Enlarge"
+          >
+            🔍
+          </button>
 
-      <div className="variation-actions">
-        <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
-          💾 Save
-        </Button>
-        <Button size="small" variant="primary" onClick={(e) => { e.stopPropagation(); onSelect(variation); }}>
-          ✓ Use
-        </Button>
-      </div>
+          <div className="variation-actions">
+            <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
+              💾 Save
+            </Button>
+            <Button size="small" variant="primary" onClick={(e) => { e.stopPropagation(); onSelect(variation); }}>
+              ✓ Use
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
