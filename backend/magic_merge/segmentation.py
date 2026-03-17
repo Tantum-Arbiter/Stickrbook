@@ -12,11 +12,21 @@ from PIL import Image
 import numpy as np
 
 try:
+    # Import onnxruntime first to ensure it's properly initialized
+    import onnxruntime as ort
+    # Suppress ONNX Runtime warnings
+    try:
+        ort.set_default_logger_severity(3)  # 3 = ERROR level
+    except AttributeError:
+        # Older versions of onnxruntime might not have this function
+        pass
+
     from rembg import remove
     REMBG_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     REMBG_AVAILABLE = False
-    print("Warning: rembg not installed. Install with: pip install rembg")
+    print(f"Warning: rembg or onnxruntime not installed. Error: {e}")
+    print("Install with: pip install -r requirements-ai.txt")
 
 
 def segment_subject(image_data: str) -> dict:

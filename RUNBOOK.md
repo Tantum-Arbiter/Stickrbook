@@ -337,6 +337,32 @@ cat backend/.env | grep COMFYUI_URL
 
 This means AI dependencies aren't installed. You have two options:
 
+**Error: "module 'onnxruntime' has no attribute 'set_default_logger_severity'"**
+
+This is a compatibility issue between `rembg` and `onnxruntime`. The fix has been applied to the code, but you may need to reinstall dependencies:
+
+```bash
+# macOS/Linux
+cd backend
+source venv/bin/activate
+pip uninstall rembg onnxruntime -y
+pip install -r requirements-ai.txt
+```
+
+```powershell
+# Windows
+cd backend
+.\venv\Scripts\Activate.ps1
+pip uninstall rembg onnxruntime -y
+pip install -r requirements-ai.txt
+```
+
+If the error persists, try pinning specific versions:
+```bash
+pip install onnxruntime==1.16.3
+pip install rembg==2.0.50
+```
+
 **Option 1: Install AI Dependencies (Recommended)**
 
 **macOS/Linux:**
