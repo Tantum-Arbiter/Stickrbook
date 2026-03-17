@@ -59,8 +59,8 @@ class CompositeRequest(BaseModel):
     position: Dict[str, int]  # {x, y}
     scale: float = 1.0
     shadow: Optional[Dict] = None
-    seamBlending: bool = True
-    blendMode: str = 'mixed'  # 'mixed', 'monochrome', or 'normal'
+    seamBlending: bool = False  # Disabled by default - Poisson causes ghosting with characters
+    blendMode: str = 'normal'  # 'normal' (best for characters), 'mixed', 'monochrome'
 
 
 class CompositeResponse(BaseModel):
@@ -73,9 +73,10 @@ class MagicMergeRequest(BaseModel):
     background: str
     position: Dict[str, int]
     scale: float = 1.0
-    harmonize: bool = True
-    harmonizeStrength: float = 0.5  # Reduced default for more natural results
+    harmonize: bool = False  # Disabled by default - can cause ghosting
+    harmonizeStrength: float = 0.3  # Lower strength to reduce artifacts
     shadow: Optional[Dict] = None
+    seamBlending: bool = False  # Disabled by default - Poisson causes ghosting with transparent characters
     blendMode: str = 'normal'  # 'normal' (best for characters), 'mixed' (detail but can ghost), 'monochrome' (color match)
 
 
@@ -205,7 +206,7 @@ async def magic_merge(request: MagicMergeRequest):
             harmonized_asset = harmonize_result['result']
             adjustments = harmonize_result['adjustments']
 
-        # Step 4: Composite with improved Poisson blending
+        # Step 4: Composite (use alpha blending by default to avoid ghosting)
         logger.info("Step 4: Compositing...")
         composite_result = composite_images(
             harmonized_asset,
@@ -214,7 +215,7 @@ async def magic_merge(request: MagicMergeRequest):
             request.position,
             request.scale,
             request.shadow,
-            seam_blending=True,
+            seam_blending=request.seamBlending,  # Use request parameter (default False)
             blend_mode=request.blendMode
         )
         
