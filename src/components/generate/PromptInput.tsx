@@ -255,6 +255,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
     ipadapterWeight,
     isGenerating,
     variationCount,
+    activeJobs,
     setMode,
     setWorkflowType,
     setPrompt,
@@ -809,7 +810,13 @@ export function PromptInput({ className = '' }: PromptInputProps) {
         disabled={isGenerating || !prompt.trim()}
         loading={isGenerating}
       >
-        {isGenerating ? 'Generating...' : <><Rocket size={14} /> Generate Variations</>}
+        {isGenerating ? (
+          'Submitting...'
+        ) : activeJobs.length > 0 ? (
+          <><Rocket size={14} /> Generate More ({activeJobs.length} in queue)</>
+        ) : (
+          <><Rocket size={14} /> Generate Variations</>
+        )}
       </Button>
     </div>
   );

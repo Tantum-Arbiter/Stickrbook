@@ -123,7 +123,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // Generation actions
   generateVariations: async () => {
     const state = get();
-    if (state.isGenerating) return;
+    // Remove blocking check - allow queueing multiple batches
+    // if (state.isGenerating) return;
 
     // Get current book from projects store
     const currentBook = useProjectsStore.getState().currentBook();
@@ -132,6 +133,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       throw new Error('No book selected. Please create or select a book first.');
     }
 
+    // Set generating flag temporarily during submission
     set({ isGenerating: true });
 
     try {
@@ -164,9 +166,11 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
       set((s) => ({
         activeJobs: [...s.activeJobs, ...jobs],
-        variations: [], // Clear previous variations
-        selectedVariationId: null,
-        compareSelection: [], // Clear compare selection
+        // Don't clear variations - keep accumulating results
+        // variations: [],
+        // selectedVariationId: null,
+        // compareSelection: [],
+        isGenerating: false, // Unlock immediately after submission
       }));
 
       // Subscribe to SSE for each job (they will run sequentially on backend)
@@ -189,7 +193,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // Multi-view generation (for characters/objects with multiple poses/angles)
   generateMultiView: async (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => {
     const state = get();
-    if (state.isGenerating) return;
+    // Remove blocking check - allow queueing multiple batches
+    // if (state.isGenerating) return;
 
     const currentBook = useProjectsStore.getState().currentBook();
     if (!currentBook) {
@@ -197,7 +202,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       throw new Error('No book selected. Please create or select a book first.');
     }
 
-    set({ isGenerating: true, variations: [], selectedVariationId: null, compareSelection: [] });
+    // Set generating flag temporarily during submission
+    set({ isGenerating: true });
 
     try {
       const allJobs: GenerationJob[] = [];
@@ -246,6 +252,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
       set((s) => ({
         activeJobs: [...s.activeJobs, ...allJobs],
+        isGenerating: false, // Unlock immediately after submission
       }));
 
       // Subscribe to SSE for each job
@@ -352,7 +359,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
               activeJobs: state.activeJobs.filter((j) => j.id !== jobId),
               variations: [...state.variations, variation],
               jobHistory: [...state.jobHistory, { ...job, status: 'complete', completedAt: new Date().toISOString() }],
-              isGenerating: state.activeJobs.length > 1,
+              // Don't set isGenerating based on job count - allow queueing anytime
             }));
           }
         } catch {
@@ -360,7 +367,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           set((state) => ({
             activeJobs: state.activeJobs.filter((j) => j.id !== jobId),
             jobHistory: [...state.jobHistory, { ...job, status: 'complete', completedAt: new Date().toISOString() }],
-            isGenerating: state.activeJobs.length > 1,
+            // Don't set isGenerating based on job count - allow queueing anytime
           }));
         }
       },
@@ -375,7 +382,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
             ...state.jobHistory,
             { ...job, status: 'failed', errorMessage: data.message, completedAt: new Date().toISOString() },
           ],
-          isGenerating: state.activeJobs.length > 1,
+          // Don't set isGenerating based on job count - allow queueing anytime
         }));
       },
 
