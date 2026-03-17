@@ -270,6 +270,9 @@ def _page_to_dict(page: db_models.Page) -> dict:
 
 def _asset_to_dict(asset: db_models.Asset) -> dict:
     """Convert SQLAlchemy Asset model to API response dict."""
+    # Construct proper image URL for frontend
+    image_url = f"/v1/storyboard/books/{asset.book_id}/assets/{asset.id}/image"
+
     return {
         "id": asset.id,
         "asset_type": asset.asset_type,  # Frontend expects 'asset_type'
@@ -277,7 +280,9 @@ def _asset_to_dict(asset: db_models.Asset) -> dict:
         "name": asset.name,
         "description": asset.description,
         "collection": asset.collection,  # Include collection for grouping
-        "image_path": asset.image_path,  # Frontend expects 'image_path'
+        "imagePath": image_url,  # Frontend expects 'imagePath' with URL
+        "thumbnailPath": image_url,  # Use same URL for thumbnail
+        "image_path": asset.image_path,  # Keep raw path for backward compatibility
         "filename": asset.image_path,  # Keep for backward compatibility
         "has_transparency": asset.has_transparency if hasattr(asset, 'has_transparency') else False,
         "prompt": asset.prompt,
@@ -1670,13 +1675,17 @@ async def get_asset_image(
     if not asset or asset.book_id != book_id:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    # Use storage to get the full path
-    path = Path(storage.root) / "books" / book_id / "assets" / asset.image_path
+    # The image_path is already relative to the book directory (e.g., "assets/characters/abc123.png")
+    # Construct the full path
+    path = Path(storage.root) / "books" / book_id / asset.image_path
     if not path.exists():
-        # Try direct path if image_path is already full
-        path = Path(asset.image_path)
+        # Try without the "assets/" prefix in case it's stored differently
+        path = Path(storage.root) / "books" / book_id / "assets" / asset.image_path
         if not path.exists():
-            raise HTTPException(status_code=404, detail="Image file not found")
+            # Try absolute path as last resort
+            path = Path(asset.image_path)
+            if not path.exists():
+                raise HTTPException(status_code=404, detail=f"Image file not found: {asset.image_path}")
 
     return FileResponse(path, media_type="image/png")
 

@@ -83,9 +83,19 @@ export function VariationsGrid({
     }
   };
 
+  const [saveDialogVariation, setSaveDialogVariation] = useState<Variation | null>(null);
+
   const handleSave = async (variation: Variation) => {
+    // Show save dialog instead of saving immediately
+    setSaveDialogVariation(variation);
+  };
+
+  const handleSaveWithOptions = async (collectionName?: string) => {
+    if (!saveDialogVariation) return;
+
     try {
-      await saveVariation(variation.id);
+      await saveVariation(saveDialogVariation.id, collectionName);
+      setSaveDialogVariation(null);
       // Don't call onSave callback - it would trigger a duplicate save
       // The saveVariation function already handles the save operation
     } catch (error) {
@@ -491,6 +501,80 @@ export function VariationsGrid({
           variations={compareVariations}
           onClose={handleCloseCompare}
         />
+      )}
+
+      {/* Save Dialog */}
+      {saveDialogVariation && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setSaveDialogVariation(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: 'var(--radius-md)',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>
+              Save Asset
+            </h3>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Collection (optional)
+              </label>
+              <input
+                id="save-collection-input"
+                type="text"
+                placeholder="Enter collection name or leave empty"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setSaveDialogVariation(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const input = document.getElementById('save-collection-input') as HTMLInputElement;
+                  const collectionName = input?.value.trim() || undefined;
+                  handleSaveWithOptions(collectionName);
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
