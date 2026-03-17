@@ -8,7 +8,8 @@
 import { useCallback, useState } from 'react';
 import { useProjectsStore } from '../../store';
 import type { Project, Book } from '../../store/types';
-import { Folder, BookOpen, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { Folder, BookOpen, ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
+import { useToast } from '../ui/Toast';
 
 export interface ProjectTreeProps {
   className?: string;
@@ -76,6 +77,8 @@ function ProjectItem({
   onBookClick,
 }: ProjectItemProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const createBook = useProjectsStore((s) => s.createBook);
+  const toast = useToast();
 
   const handleToggle = useCallback(
     (e: React.MouseEvent) => {
@@ -84,6 +87,29 @@ function ProjectItem({
     },
     []
   );
+
+  const handleNewBook = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const title = prompt('Enter book title:');
+      if (!title) return;
+
+      // Use a default preset for now
+      const defaultPreset = {
+        name: 'default',
+        artStyle: 'Storybook illustration',
+        referencePrompt: '',
+        negativePrompt: '',
+        steps: 35,
+        cfg: 5.5,
+      };
+
+      await createBook(project.id, title, defaultPreset);
+      toast.success(`Book "${title}" created`);
+    } catch (error) {
+      toast.error('Failed to create book');
+    }
+  }, [project.id, createBook, toast]);
 
   const books = project.books || [];
 
@@ -122,6 +148,15 @@ function ProjectItem({
             <p className="text-muted">No books in this project</p>
           </div>
         )}
+
+        {/* Add Book Button */}
+        <button
+          className="book-item book-add-btn"
+          onClick={handleNewBook}
+          title="Create new book"
+        >
+          <Plus size={14} /> New Book
+        </button>
       </div>
     </div>
   );
