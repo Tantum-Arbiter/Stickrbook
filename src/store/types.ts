@@ -175,6 +175,7 @@ export interface GenerationJob {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  batchName?: string; // Name of the generation batch for organization
   metadata?: {
     pose?: string;
     viewAngle?: string;
@@ -198,6 +199,7 @@ export interface Variation {
   prompt: string;
   negativePrompt?: string;
   selected: boolean;
+  batchName?: string; // Name of the generation batch for organization
   // Multi-view metadata
   pose?: string;
   viewAngle?: string;
@@ -370,8 +372,8 @@ export interface GenerationState {
   clearCompareSelection: () => void;
 
   // Generation actions
-  generateVariations: () => Promise<void>;
-  generateMultiView: (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => Promise<void>;
+  generateVariations: (batchName?: string) => Promise<void>;
+  generateMultiView: (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>, batchName?: string) => Promise<void>;
   selectVariation: (id: string) => void;
   clearVariations: () => void;
   saveVariation: (id: string) => Promise<Asset>;

@@ -10,7 +10,7 @@ import { useGenerationStore, useUIStore, useProjectsStore } from '../../store';
 import { Button } from '../ui/Button';
 import { CompareModal } from './CompareModal';
 import { useToast } from '../ui/Toast';
-import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw } from 'lucide-react';
+import { GitCompare, Sparkles, Zap, Maximize2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Variation, GenerationJob } from '../../store/types';
 import { generationApi } from '../../api/endpoints';
 
@@ -47,6 +47,7 @@ export function VariationsGrid({
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
+  const [collapsedBatches, setCollapsedBatches] = useState<Set<string>>(new Set());
 
   // Create slots based on variation count - fill with variations or jobs
   const totalSlots = Math.max(variationCount, variations.length, activeJobs.length);
@@ -96,6 +97,18 @@ export function VariationsGrid({
 
   const closePreview = () => {
     setPreviewImage(null);
+  };
+
+  const toggleBatchCollapse = (batchKey: string) => {
+    setCollapsedBatches(prev => {
+      const next = new Set(prev);
+      if (next.has(batchKey)) {
+        next.delete(batchKey);
+      } else {
+        next.add(batchKey);
+      }
+      return next;
+    });
   };
 
   const handleCompare = () => {
@@ -223,75 +236,121 @@ export function VariationsGrid({
         </div>
       )}
 
-      {/* Variations Grid - Grouped by Pose/Angle or Flat */}
+      {/* Variations Grid - Grouped by Batch Name, then Pose/Angle, or Flat */}
       {(() => {
-        // Group variations by pose/angle if they have metadata
+        // Check if we should group by batch name or pose/angle
+        const hasBatchNames = variations.some(v => v.batchName) || activeJobs.some(j => j.batchName);
         const hasMultiView = variations.some(v => v.pose || v.viewAngle);
 
-        if (hasMultiView) {
-          // Group variations by their pose/angle combination
+        if (hasBatchNames || hasMultiView) {
+          // Group variations by batch name first, then by pose/angle
           const groups = new Map<string, typeof slots>();
+
           slots.forEach(slot => {
-            const { variation } = slot;
-            if (variation) {
-              const key = `${variation.pose || 'none'}_${variation.viewAngle || 'none'}`;
-              if (!groups.has(key)) {
-                groups.set(key, []);
+            const { variation, job } = slot;
+            const batchName = variation?.batchName || job?.batchName;
+            const pose = variation?.pose;
+            const viewAngle = variation?.viewAngle;
+
+            // Create a hierarchical key: batchName_pose_viewAngle
+            let key: string;
+            if (batchName) {
+              // If has batch name, use it as primary grouping
+              if (pose || viewAngle) {
+                key = `${batchName}_${pose || 'none'}_${viewAngle || 'none'}`;
+              } else {
+                key = batchName;
               }
-              groups.get(key)!.push(slot);
+            } else if (pose || viewAngle) {
+              // If no batch name but has pose/angle, group by that
+              key = `${pose || 'none'}_${viewAngle || 'none'}`;
             } else {
-              // Jobs without variations yet - add to a "pending" group
-              if (!groups.has('pending')) {
-                groups.set('pending', []);
-              }
-              groups.get('pending')!.push(slot);
+              // No grouping metadata - use a default key
+              key = 'ungrouped';
             }
+
+            if (!groups.has(key)) {
+              groups.set(key, []);
+            }
+            groups.get(key)!.push(slot);
           });
 
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', padding: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', padding: '4px' }}>
               {Array.from(groups.entries()).map(([key, groupSlots]) => {
                 const firstVariation = groupSlots.find(s => s.variation)?.variation;
-                const label = firstVariation
-                  ? `${firstVariation.poseLabel || firstVariation.pose || ''} ${firstVariation.viewAngleLabel || firstVariation.viewAngle || ''}`.trim()
-                  : 'Generating...';
+                const firstJob = groupSlots.find(s => s.job)?.job;
+                const batchName = firstVariation?.batchName || firstJob?.batchName;
+                const isCollapsed = collapsedBatches.has(key);
+
+                // Determine label
+                let label: string;
+                if (batchName) {
+                  if (firstVariation?.pose || firstVariation?.viewAngle) {
+                    label = `${batchName} - ${firstVariation.poseLabel || firstVariation.pose || ''} ${firstVariation.viewAngleLabel || firstVariation.viewAngle || ''}`.trim();
+                  } else {
+                    label = batchName;
+                  }
+                } else if (firstVariation?.pose || firstVariation?.viewAngle) {
+                  label = `${firstVariation.poseLabel || firstVariation.pose || ''} ${firstVariation.viewAngleLabel || firstVariation.viewAngle || ''}`.trim();
+                } else {
+                  label = 'Variations';
+                }
 
                 return (
                   <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <h3 style={{
-                      fontSize: 'calc(var(--font-size-md) * 1.1)',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      margin: 0,
-                      padding: '0 4px'
-                    }}>
-                      {label}
-                    </h3>
                     <div
+                      onClick={() => toggleBatchCollapse(key)}
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(${Math.min(groupSlots.length, 4)}, 1fr)`,
-                        gap: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s',
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {groupSlots.map(({ index, variation, job }) => (
-                        <VariationCard
-                          key={index}
-                          index={index}
-                          variation={variation}
-                          job={job}
-                          isSelected={variation?.id === selectedVariationId}
-                          isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
-                          compareMode={compareMode}
-                          onSelect={handleSelect}
-                          onSave={handleSave}
-                          onEnlarge={handleEnlarge}
-                          onVarySubtle={handleVarySubtle}
-                          onVaryStrong={handleVaryStrong}
-                          onRegenerate={handleRegenerate}
-                        />
-                      ))}
+                      {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                      <h3 style={{
+                        fontSize: 'calc(var(--font-size-md) * 1.1)',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                      }}>
+                        {label} ({groupSlots.length})
+                      </h3>
                     </div>
+                    {!isCollapsed && (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${Math.min(groupSlots.length, 4)}, 1fr)`,
+                          gap: '16px',
+                          paddingLeft: '26px', // Indent content under the header
+                        }}
+                      >
+                        {groupSlots.map(({ index, variation, job }) => (
+                          <VariationCard
+                            key={index}
+                            index={index}
+                            variation={variation}
+                            job={job}
+                            isSelected={variation?.id === selectedVariationId}
+                            isCompareSelected={variation ? compareSelection.includes(variation.id) : false}
+                            compareMode={compareMode}
+                            onSelect={handleSelect}
+                            onSave={handleSave}
+                            onEnlarge={handleEnlarge}
+                            onVarySubtle={handleVarySubtle}
+                            onVaryStrong={handleVaryStrong}
+                            onRegenerate={handleRegenerate}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

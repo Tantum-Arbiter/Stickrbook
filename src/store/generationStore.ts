@@ -124,7 +124,7 @@ export const useGenerationStore = create<GenerationState>()(
   },
 
   // Generation actions
-  generateVariations: async () => {
+  generateVariations: async (batchName?: string) => {
     const state = get();
     // Don't block if already generating - just prevent double submission
     if (state.isGenerating) {
@@ -168,6 +168,7 @@ export const useGenerationStore = create<GenerationState>()(
         height: state.height,
         progress: 0,
         createdAt: new Date().toISOString(),
+        batchName: batchName || undefined, // Add batch name for organization
       }));
 
       // Subscribe to SSE for each job (they will run sequentially on backend)
@@ -196,7 +197,7 @@ export const useGenerationStore = create<GenerationState>()(
   },
 
   // Multi-view generation (for characters/objects with multiple poses/angles)
-  generateMultiView: async (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>) => {
+  generateMultiView: async (viewConfigs: Array<{ pose?: string; viewAngle?: string; poseLabel?: string; viewAngleLabel?: string }>, batchName?: string) => {
     const state = get();
     // Don't block if already generating - just prevent double submission
     if (state.isGenerating) {
@@ -247,6 +248,7 @@ export const useGenerationStore = create<GenerationState>()(
           height: state.height,
           progress: 0,
           createdAt: new Date().toISOString(),
+          batchName: batchName || undefined, // Add batch name for organization
           metadata: {
             pose: config.pose,
             viewAngle: config.viewAngle,
@@ -396,6 +398,7 @@ export const useGenerationStore = create<GenerationState>()(
               prompt: job.prompt || '',
               negativePrompt: job.negativePrompt,
               selected: false,
+              batchName: job.batchName, // Include batch name for organization
               // Include multi-view metadata if present
               pose: job.metadata?.pose,
               viewAngle: job.metadata?.viewAngle,

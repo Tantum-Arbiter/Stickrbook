@@ -291,6 +291,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
   const [selectedViewAngles, setSelectedViewAngles] = useState<string[]>(['front']);
   const [selectedObjectAngles, setSelectedObjectAngles] = useState<string[]>(['front']);
   const [selectedTheme, setSelectedTheme] = useState<string>('');
+  const [batchName, setBatchName] = useState<string>(''); // Name for the generation batch
   const [sceneSettings, setSceneSettings] = useState({
     background: '',
     camera: 'eye_level',
@@ -318,6 +319,12 @@ export function PromptInput({ className = '' }: PromptInputProps) {
       return;
     }
 
+    // For scenes, ask for a batch name to organize generations
+    let finalBatchName = batchName.trim();
+    if (mode === 'scene' && !finalBatchName) {
+      finalBatchName = window.prompt('Enter a name for this scene generation batch (for organization):') || '';
+    }
+
     try {
       // For characters and objects, use multi-view generation if multiple poses/angles are selected
       if (mode === 'character' && (selectedPoses.length > 1 || selectedViewAngles.length > 1)) {
@@ -335,7 +342,7 @@ export function PromptInput({ className = '' }: PromptInputProps) {
             });
           }
         }
-        await generateMultiView(viewConfigs);
+        await generateMultiView(viewConfigs, finalBatchName);
       } else if (mode === 'object' && selectedObjectAngles.length > 1) {
         // Generate for each object angle
         const viewConfigs = selectedObjectAngles.map(angle => {
@@ -345,11 +352,14 @@ export function PromptInput({ className = '' }: PromptInputProps) {
             viewAngleLabel: angleData?.label || angle,
           };
         });
-        await generateMultiView(viewConfigs);
+        await generateMultiView(viewConfigs, finalBatchName);
       } else {
         // Standard single-batch generation for scenes or single pose/angle
-        await generateVariations();
+        await generateVariations(finalBatchName);
       }
+
+      // Clear batch name after successful generation
+      setBatchName('');
     } catch (error) {
       console.error('Generation error:', error);
       alert('Failed to generate images. Please check that the backend server is running and try again.');
@@ -810,6 +820,37 @@ export function PromptInput({ className = '' }: PromptInputProps) {
               <span>{ipadapterWeight.toFixed(2)}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Batch Name Input (for scenes) */}
+      {mode === 'scene' && (
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: 'calc(var(--font-size-sm) * 1.05)',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            marginBottom: '8px'
+          }}>
+            Batch Name (optional - helps organize multiple scene generations)
+          </label>
+          <input
+            type="text"
+            value={batchName}
+            onChange={(e) => setBatchName(e.target.value)}
+            placeholder="e.g., 'Forest Adventure', 'Beach Scenes', 'Castle Interior'"
+            disabled={isGenerating}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              fontSize: 'calc(var(--font-size-md) * 0.95)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              backgroundColor: 'var(--bg-secondary)',
+              color: 'var(--text-primary)',
+            }}
+          />
         </div>
       )}
 
