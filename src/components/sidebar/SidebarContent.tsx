@@ -12,7 +12,7 @@ import { SidebarSection } from '../layout';
 import { useProjectsStore, useEditorStore, useToast, useUIStore } from '../../store';
 import { Button } from '../ui/Button';
 import type { Asset, Book } from '../../store/types';
-import { FolderOpen, Image, Download, Upload, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { FolderOpen, Image, Download, Upload, Loader2 } from 'lucide-react';
 import {
   exportProjectBundle,
   importProjectBundle,
@@ -28,21 +28,41 @@ export interface SidebarContentProps {
 export function SidebarContent({ className = '', activeTab = 'generate' }: SidebarContentProps) {
   const createProject = useProjectsStore((s) => s.createProject);
   const addLayer = useEditorStore((s) => s.addLayer);
-  const sidebarZoom = useUIStore((s) => s.sidebarZoom);
-  const setSidebarZoom = useUIStore((s) => s.setSidebarZoom);
   const toast = useToast();
 
-  const handleZoomIn = useCallback(() => {
-    setSidebarZoom(Math.min(2.0, sidebarZoom + 0.1));
-  }, [sidebarZoom, setSidebarZoom]);
+  // Resizable sections state
+  const [projectsHeight, setProjectsHeight] = useState(40); // Percentage
+  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleZoomOut = useCallback(() => {
-    setSidebarZoom(Math.max(0.5, sidebarZoom - 0.1));
-  }, [sidebarZoom, setSidebarZoom]);
+  // Handle resize divider drag
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
 
-  const handleZoomReset = useCallback(() => {
-    setSidebarZoom(1.0);
-  }, [setSidebarZoom]);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const startY = e.clientY;
+    const startHeight = projectsHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const deltaPercent = (deltaY / containerRect.height) * 100;
+      const newHeight = Math.min(80, Math.max(20, startHeight + deltaPercent));
+      setProjectsHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [projectsHeight]);
 
   const handleNewProject = useCallback(async () => {
     try {
@@ -94,71 +114,88 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
   }, [toast]);
 
   return (
-    <div className={`sidebar-content ${className}`}>
-      {/* Zoom Controls */}
+    <div ref={containerRef} className={`sidebar-content ${className}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Projects Section - Resizable */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 12px',
-        background: 'var(--bg-dark)',
-        borderBottom: '1px solid var(--border)',
-      }}>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: 1 }}>
-          Zoom: {Math.round(sidebarZoom * 100)}%
-        </span>
-        <Button size="small" variant="ghost" onClick={handleZoomOut} title="Zoom Out">
-          <ZoomOut size={12} />
-        </Button>
-        <Button size="small" variant="ghost" onClick={handleZoomReset} title="Reset Zoom">
-          <RotateCcw size={12} />
-        </Button>
-        <Button size="small" variant="ghost" onClick={handleZoomIn} title="Zoom In">
-          <ZoomIn size={12} />
-        </Button>
-      </div>
-
-      {/* Scaled Content Container */}
-      <div style={{
-        flex: 1,
-        overflow: 'hidden',
+        height: `${projectsHeight}%`,
         display: 'flex',
         flexDirection: 'column',
+        minHeight: '100px',
+        overflow: 'hidden'
       }}>
-        <div style={{
-          flex: 1,
-          overflow: 'auto',
-          transform: `scale(${sidebarZoom})`,
-          transformOrigin: 'top left',
-          width: `${100 / sidebarZoom}%`,
-          height: `${100 / sidebarZoom}%`,
-        }}>
-          {/* Projects Section */}
-          <SidebarSection
-            id="projects"
-            title="Projects"
-            icon={<FolderOpen size={14} />}
-          >
-            <div className="sidebar-section-actions">
-              <Button size="small" variant="ghost" onClick={handleNewProject}>
-                + New
-              </Button>
-            </div>
-            <ProjectTree onBookSelect={handleBookSelect} />
-          </SidebarSection>
+        <SidebarSection
+          id="projects"
+          title="Projects"
+          icon={<FolderOpen size={14} />}
+        >
+          <div className="sidebar-section-actions">
+            <Button size="small" variant="ghost" onClick={handleNewProject}>
+              + New
+            </Button>
+          </div>
+          <ProjectTree onBookSelect={handleBookSelect} />
+        </SidebarSection>
+      </div>
 
-          {/* Assets Section (only when a book is selected) */}
-          <SidebarSection
-            id="assets"
-            title="Assets"
-            icon={<Image size={14} />}
-          >
-            <AssetLibrary
-              onAssetClick={handleAssetClick}
-              onAssetDragStart={handleAssetDragStart}
-            />
-          </SidebarSection>
-        </div>
+      {/* Resize Divider */}
+      <div
+        onMouseDown={handleResizeStart}
+        style={{
+          height: '6px',
+          background: isResizing ? 'var(--brand-teal)' : 'transparent',
+          cursor: 'row-resize',
+          borderTop: '1px solid var(--border)',
+          borderBottom: '1px solid var(--border)',
+          transition: isResizing ? 'none' : 'background 0.2s ease',
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 10,
+        }}
+        onMouseEnter={(e) => {
+          if (!isResizing) {
+            e.currentTarget.style.background = 'var(--brand-teal)';
+            e.currentTarget.style.opacity = '0.3';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isResizing) {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.opacity = '1';
+          }
+        }}
+      >
+        {/* Visual indicator */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '40px',
+          height: '3px',
+          background: 'var(--text-muted)',
+          borderRadius: '2px',
+          opacity: 0.5,
+        }} />
+      </div>
+
+      {/* Assets Section - Takes remaining space */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100px',
+        overflow: 'hidden'
+      }}>
+        <SidebarSection
+          id="assets"
+          title="Assets"
+          icon={<Image size={14} />}
+        >
+          <AssetLibrary
+            onAssetClick={handleAssetClick}
+            onAssetDragStart={handleAssetDragStart}
+          />
+        </SidebarSection>
       </div>
     </div>
   );
