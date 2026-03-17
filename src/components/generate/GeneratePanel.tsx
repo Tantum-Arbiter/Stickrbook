@@ -72,24 +72,6 @@ export function GeneratePanel({ className = '' }: GeneratePanelProps) {
             onSelect={handleUseVariation}
             onSave={handleSaveVariation}
           />
-
-          {/* Selected Variation Info */}
-          {selectedVariation && (
-            <div className="selected-variation-info">
-              <div className="info-row">
-                <span>Seed: {selectedVariation.seed}</span>
-                <span>Prompt: {selectedVariation.prompt.substring(0, 50)}...</span>
-              </div>
-              <div className="info-actions">
-                <Button size="small" onClick={() => handleSaveVariation(selectedVariation)}>
-                  💾 Save to Assets
-                </Button>
-                <Button size="small" variant="primary" onClick={() => handleUseVariation(selectedVariation)}>
-                  ✓ Use in Editor
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right Panel - Controls */}

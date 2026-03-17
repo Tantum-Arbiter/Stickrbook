@@ -83,25 +83,29 @@ function App() {
               <Tab id="story" label="Story">Story</Tab>
             </Tabs>
           </ToolbarGroup>
-          <ToolbarSeparator />
-          <ToolbarGroup>
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={undo}
-              disabled={!canUndo}
-            >
-              ↶ Undo
-            </Button>
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={redo}
-              disabled={!canRedo}
-            >
-              Redo ↷
-            </Button>
-          </ToolbarGroup>
+          {activeTab === 'edit' && (
+            <>
+              <ToolbarSeparator />
+              <ToolbarGroup>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={undo}
+                  disabled={!canUndo}
+                >
+                  ↶ Undo
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={redo}
+                  disabled={!canRedo}
+                >
+                  Redo ↷
+                </Button>
+              </ToolbarGroup>
+            </>
+          )}
         </Toolbar>
 
         {/* Main Content Area - Tab-based */}

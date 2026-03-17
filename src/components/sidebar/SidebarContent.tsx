@@ -33,7 +33,12 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
   // Resizable sections state
   const [projectsHeight, setProjectsHeight] = useState(40); // Percentage
   const [isResizing, setIsResizing] = useState(false);
+  const [projectsCollapsed, setProjectsCollapsed] = useState(false);
+  const [assetsCollapsed, setAssetsCollapsed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // When both are collapsed, they should stack. When one is open, it should take available space
+  const bothCollapsed = projectsCollapsed && assetsCollapsed;
 
   // Handle resize divider drag
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -115,18 +120,21 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
 
   return (
     <div ref={containerRef} className={`sidebar-content ${className}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Projects Section - Resizable */}
+      {/* Projects Section - Resizable or stacked when collapsed */}
       <div style={{
-        height: `${projectsHeight}%`,
+        height: bothCollapsed || projectsCollapsed ? 'auto' : `${projectsHeight}%`,
+        flex: bothCollapsed || projectsCollapsed ? '0 0 auto' : undefined,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100px',
+        minHeight: projectsCollapsed ? '0' : '100px',
         overflow: 'hidden'
       }}>
         <SidebarSection
           id="projects"
           title="Projects"
           icon={<FolderOpen size={14} />}
+          collapsed={projectsCollapsed}
+          onToggle={setProjectsCollapsed}
         >
           <div className="sidebar-section-actions">
             <Button size="small" variant="ghost" onClick={handleNewProject}>
@@ -137,59 +145,64 @@ export function SidebarContent({ className = '', activeTab = 'generate' }: Sideb
         </SidebarSection>
       </div>
 
-      {/* Resize Divider */}
-      <div
-        onMouseDown={handleResizeStart}
-        style={{
-          height: '6px',
-          background: isResizing ? 'var(--brand-teal)' : 'transparent',
-          cursor: 'row-resize',
-          borderTop: '1px solid var(--border)',
-          borderBottom: '1px solid var(--border)',
-          transition: isResizing ? 'none' : 'background 0.2s ease',
-          flexShrink: 0,
-          position: 'relative',
-          zIndex: 10,
-        }}
-        onMouseEnter={(e) => {
-          if (!isResizing) {
-            e.currentTarget.style.background = 'var(--brand-teal)';
-            e.currentTarget.style.opacity = '0.3';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!isResizing) {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.opacity = '1';
-          }
-        }}
-      >
-        {/* Visual indicator */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '40px',
-          height: '3px',
-          background: 'var(--text-muted)',
-          borderRadius: '2px',
-          opacity: 0.5,
-        }} />
-      </div>
+      {/* Resize Divider - Only show when both sections are expanded */}
+      {!projectsCollapsed && !assetsCollapsed && (
+        <div
+          onMouseDown={handleResizeStart}
+          style={{
+            height: '6px',
+            background: isResizing ? 'var(--brand-teal)' : 'transparent',
+            cursor: 'row-resize',
+            borderTop: '1px solid var(--border)',
+            borderBottom: '1px solid var(--border)',
+            transition: isResizing ? 'none' : 'background 0.2s ease',
+            flexShrink: 0,
+            position: 'relative',
+            zIndex: 10,
+          }}
+          onMouseEnter={(e) => {
+            if (!isResizing) {
+              e.currentTarget.style.background = 'var(--brand-teal)';
+              e.currentTarget.style.opacity = '0.3';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isResizing) {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.opacity = '1';
+            }
+          }}
+        >
+          {/* Visual indicator */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '40px',
+            height: '3px',
+            background: 'var(--text-muted)',
+            borderRadius: '2px',
+            opacity: 0.5,
+          }} />
+        </div>
+      )}
 
-      {/* Assets Section - Takes remaining space */}
+      {/* Assets Section - Takes remaining space or stacks when collapsed */}
       <div style={{
-        flex: 1,
+        height: bothCollapsed || assetsCollapsed ? 'auto' : undefined,
+        flex: bothCollapsed || assetsCollapsed ? '0 0 auto' : 1,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100px',
+        minHeight: assetsCollapsed ? '0' : '100px',
         overflow: 'hidden'
       }}>
         <SidebarSection
           id="assets"
           title="Assets"
           icon={<Image size={14} />}
+          collapsed={assetsCollapsed}
+          onToggle={setAssetsCollapsed}
         >
           <AssetLibrary
             onAssetClick={handleAssetClick}

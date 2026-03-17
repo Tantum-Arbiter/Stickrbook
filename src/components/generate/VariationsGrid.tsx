@@ -256,10 +256,9 @@ function VariationCard({
   return (
     <div
       className={`variation-card ${isSelected ? 'selected' : ''} ${isCompareSelected ? 'compare-selected' : ''}`}
-      onClick={() => onSelect(variation)}
       style={{
         position: 'relative',
-        cursor: compareMode ? 'pointer' : 'default',
+        cursor: 'pointer',
       }}
     >
       {/* Compare Mode Checkbox */}
@@ -286,29 +285,21 @@ function VariationCard({
         </div>
       )}
 
-      <img src={variation.imagePath} alt={`Variation ${index + 1}`} />
+      {/* Clicking image shows preview */}
+      <img
+        src={variation.imagePath}
+        alt={`Variation ${index + 1}`}
+        onClick={() => compareMode ? onSelect(variation) : onEnlarge(variation)}
+      />
 
       <span className="seed-badge">Seed: {variation.seed}</span>
 
       {!compareMode && (
-        <>
-          <button
-            className="enlarge-btn"
-            onClick={(e) => { e.stopPropagation(); onEnlarge(variation); }}
-            title="Enlarge"
-          >
-            🔍
-          </button>
-
-          <div className="variation-actions">
-            <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
-              💾 Save
-            </Button>
-            <Button size="small" variant="primary" onClick={(e) => { e.stopPropagation(); onSelect(variation); }}>
-              ✓ Use
-            </Button>
-          </div>
-        </>
+        <div className="variation-actions">
+          <Button size="small" variant="secondary" onClick={(e) => { e.stopPropagation(); onSave(variation); }}>
+            💾 Save
+          </Button>
+        </div>
       )}
     </div>
   );
