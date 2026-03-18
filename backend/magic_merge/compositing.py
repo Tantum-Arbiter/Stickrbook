@@ -11,7 +11,8 @@ import base64
 import numpy as np
 from PIL import Image
 import cv2
-from typing import Dict, Tuple
+from typing import Dict
+from .edge_blending import apply_edge_color_bleeding, apply_ambient_occlusion, Tuple
 
 
 def composite_images(
@@ -22,10 +23,12 @@ def composite_images(
     scale: float = 1.0,
     shadow: Dict = None,
     seam_blending: bool = True,
-    blend_mode: str = 'mixed'
+    blend_mode: str = 'mixed',
+    edge_blending: bool = True,
+    edge_blending_strength: float = 0.3
 ) -> Dict:
     """
-    Composite asset onto background with optional shadow and seam blending
+    Composite asset onto background with advanced blending options
 
     Args:
         asset_data: Base64 encoded asset image
@@ -36,6 +39,8 @@ def composite_images(
         shadow: Optional shadow parameters
         seam_blending: Use Poisson blending for seamless compositing
         blend_mode: 'mixed' (best detail), 'monochrome' (best color match), 'normal' (balanced)
+        edge_blending: Apply edge color bleeding for natural integration (default True)
+        edge_blending_strength: Strength of edge color bleeding (0-1, default 0.3)
 
     Returns:
         dict with 'result' (base64 composited image)
@@ -66,6 +71,16 @@ def composite_images(
 
     bg_array = np.array(background.convert('RGB'))
     mask_array = np.array(mask)
+
+    # Apply edge color bleeding for natural integration (before compositing)
+    if edge_blending:
+        asset_array = apply_edge_color_bleeding(
+            asset_array,
+            bg_array,
+            mask_array,
+            position,
+            strength=edge_blending_strength
+        )
 
     # Add shadow if specified
     if shadow:

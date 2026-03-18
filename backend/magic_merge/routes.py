@@ -73,11 +73,13 @@ class MagicMergeRequest(BaseModel):
     background: str
     position: Dict[str, int]
     scale: float = 1.0
-    harmonize: bool = False  # Disabled by default - can cause ghosting
-    harmonizeStrength: float = 0.3  # Lower strength to reduce artifacts
+    harmonize: bool = True  # Enabled by default - now uses advanced LAB color matching
+    harmonizeStrength: float = 0.5  # Moderate strength for natural blending
     shadow: Optional[Dict] = None
     seamBlending: bool = False  # Disabled by default - Poisson causes ghosting with transparent characters
     blendMode: str = 'normal'  # 'normal' (best for characters), 'mixed' (detail but can ghost), 'monochrome' (color match)
+    edgeBlending: bool = True  # Edge color bleeding for seamless integration
+    edgeBlendingStrength: float = 0.3  # Subtle edge color bleeding
 
 
 class MagicMergeResponse(BaseModel):
@@ -216,7 +218,9 @@ async def magic_merge(request: MagicMergeRequest):
             request.scale,
             request.shadow,
             seam_blending=request.seamBlending,  # Use request parameter (default False)
-            blend_mode=request.blendMode
+            blend_mode=request.blendMode,
+            edge_blending=request.edgeBlending,  # Edge color bleeding for natural integration
+            edge_blending_strength=request.edgeBlendingStrength
         )
         
         logger.info("Magic Merge complete!")
