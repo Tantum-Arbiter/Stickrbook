@@ -209,7 +209,7 @@ class StickrbookAPI:
     async def create_book(self, title: str, description: str, preset: str = "friendly-dragon") -> Dict:
         """Create a new book"""
         async with self.session.post(
-            f"{self.base_url}/books",
+            f"{self.base_url}/v1/storyboard/books",
             json={
                 "title": title,
                 "description": description,
@@ -236,7 +236,7 @@ class StickrbookAPI:
         negative_prompt = f"{style_config['negative']}, low quality, blurry, distorted, deformed, ugly, bad anatomy"
 
         async with self.session.post(
-            f"{self.base_url}/books/{book_id}/pages/1/variations",
+            f"{self.base_url}/v1/storyboard/books/{book_id}/pages/1/variations",
             json={
                 "prompt": full_prompt,
                 "negative_prompt": negative_prompt,
@@ -255,7 +255,7 @@ class StickrbookAPI:
 
     async def get_job_status(self, job_id: str) -> Dict:
         """Get job status"""
-        async with self.session.get(f"{self.base_url}/jobs/{job_id}") as resp:
+        async with self.session.get(f"{self.base_url}/v1/jobs/{job_id}") as resp:
             resp.raise_for_status()
             return await resp.json()
 
