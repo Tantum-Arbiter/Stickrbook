@@ -236,7 +236,7 @@ class StickrbookAPI:
         negative_prompt = f"{style_config['negative']}, low quality, blurry, distorted, deformed, ugly, bad anatomy"
 
         async with self.session.post(
-            f"{self.base_url}/v1/storyboard/books/{book_id}/pages/1/variations",
+            f"{self.base_url}/v1/storyboard/books/{book_id}/variations",
             json={
                 "prompt": full_prompt,
                 "negative_prompt": negative_prompt,
@@ -274,6 +274,27 @@ class StickrbookAPI:
             await asyncio.sleep(2)
 
         raise TimeoutError(f"Job {job_id} timed out after {timeout}s")
+
+    async def save_variation_as_asset(
+        self,
+        book_id: str,
+        job_id: str,
+        asset_type: str = "background",
+        name: Optional[str] = None,
+        collection: Optional[str] = None
+    ) -> Dict:
+        """Save a variation as an asset in the book"""
+        params = f"asset_type={asset_type}"
+        if name:
+            params += f"&name={name}"
+        if collection:
+            params += f"&collection={collection}"
+
+        async with self.session.post(
+            f"{self.base_url}/v1/storyboard/books/{book_id}/variations/{job_id}/select?{params}"
+        ) as resp:
+            resp.raise_for_status()
+            return await resp.json()
 
     async def download_image(self, url: str, output_path: Path):
         """Download image from URL"""
@@ -386,8 +407,30 @@ async def generate_story_images(
                             # Wait for completion
                             job_status = await api.wait_for_job(job_id)
 
-                            # Download image
+                            # Save as asset in the book (this makes it visible in the UI)
                             if job_status.get("outputs"):
+                                # Determine asset type based on category
+                                asset_type_map = {
+                                    "scenes": "background",
+                                    "characters": "character",
+                                    "objects": "object"
+                                }
+                                asset_type = asset_type_map.get(category_name, "background")
+
+                                # Create a descriptive name for the asset
+                                asset_name = f"{category_name}_{idx:02d}_{style_key}"
+                                collection_name = f"{theme}_{style_key}"
+
+                                # Save to book as asset (makes it visible in UI)
+                                await api.save_variation_as_asset(
+                                    book_id=book_id,
+                                    job_id=job_id,
+                                    asset_type=asset_type,
+                                    name=asset_name,
+                                    collection=collection_name
+                                )
+
+                                # Also download to local directory
                                 output = job_status["outputs"][0]
                                 download_url = f"{api.base_url}{output['download_url']}"
 
@@ -403,6 +446,9 @@ async def generate_story_images(
                                     "prompt": prompt,
                                     "filename": str(output_path.relative_to(session_dir)),
                                     "job_id": job_id,
+                                    "asset_name": asset_name,
+                                    "asset_type": asset_type,
+                                    "collection": collection_name,
                                 })
 
                                 console.print(f"    [green]✓[/green] {filename}")
