@@ -1,0 +1,4 @@
+# UI Automation Dependencies
+playwright>=1.40.0
+pytest-playwright>=0.4.3
+
