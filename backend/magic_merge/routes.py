@@ -13,6 +13,7 @@ import logging
 from .segmentation import segment_subject, refine_mask
 from .scene_analysis import analyze_scene
 from .harmonization import harmonize_colors
+from .advanced_harmonization import advanced_harmonize
 from .compositing import composite_images
 
 logger = logging.getLogger(__name__)
@@ -73,8 +74,9 @@ class MagicMergeRequest(BaseModel):
     background: str
     position: Dict[str, int]
     scale: float = 1.0
-    harmonize: bool = True  # Enabled by default - now uses advanced LAB color matching
+    harmonize: bool = True  # Enabled by default
     harmonizeStrength: float = 0.5  # Moderate strength for natural blending
+    advancedHarmonization: bool = True  # Use advanced multi-zone color grading (recommended)
     shadow: Optional[Dict] = None
     seamBlending: bool = False  # Disabled by default - Poisson causes ghosting with transparent characters
     blendMode: str = 'normal'  # 'normal' (best for characters), 'mixed' (detail but can ghost), 'monochrome' (color match)
@@ -196,15 +198,25 @@ async def magic_merge(request: MagicMergeRequest):
         # Step 3: Harmonize colors (if requested)
         harmonized_asset = request.asset
         adjustments = {}
-        
+
         if request.harmonize:
-            logger.info("Step 3: Harmonizing colors...")
-            harmonize_result = harmonize_colors(
-                request.asset,
-                request.background,
-                scene_analysis,
-                strength=request.harmonizeStrength
-            )
+            if request.advancedHarmonization:
+                logger.info("Step 3: Advanced harmonization (multi-zone color grading)...")
+                harmonize_result = advanced_harmonize(
+                    request.asset,
+                    request.background,
+                    scene_analysis,
+                    mask_data=segment_result['mask'],
+                    strength=request.harmonizeStrength
+                )
+            else:
+                logger.info("Step 3: Basic harmonization...")
+                harmonize_result = harmonize_colors(
+                    request.asset,
+                    request.background,
+                    scene_analysis,
+                    strength=request.harmonizeStrength
+                )
             harmonized_asset = harmonize_result['result']
             adjustments = harmonize_result['adjustments']
 

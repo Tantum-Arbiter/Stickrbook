@@ -117,14 +117,21 @@ def harmonize_colors(
     # Convert back to RGB
     result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
 
-    # === STEP 4: Color Temperature Tint ===
-    if abs(temp_factor) > 0.1:  # Only apply if significant temperature difference
+    # === STEP 4: Enhanced Color Temperature Tint ===
+    # Apply stronger white balance correction for better scene integration
+    if abs(temp_factor) > 0.05:  # Lower threshold for more aggressive correction
         result = result.astype(float)
         if temp_factor > 0:  # Cool scene - add blue
-            result[:, :, 2] = np.clip(result[:, :, 2] + temp_factor * 15 * strength, 0, 255)
-        else:  # Warm scene - add red/yellow
-            result[:, :, 0] = np.clip(result[:, :, 0] - temp_factor * 15 * strength, 0, 255)
-            result[:, :, 1] = np.clip(result[:, :, 1] - temp_factor * 10 * strength, 0, 255)
+            result[:, :, 2] = np.clip(result[:, :, 2] + temp_factor * 25 * strength, 0, 255)
+            # Reduce warm tones slightly
+            result[:, :, 0] = np.clip(result[:, :, 0] - temp_factor * 8 * strength, 0, 255)
+        else:  # Warm scene - add red/yellow (ENHANCED for outdoor scenes)
+            # Stronger warm shift for sunlit scenes
+            warm_boost = abs(temp_factor) * strength
+            result[:, :, 0] = np.clip(result[:, :, 0] + warm_boost * 30, 0, 255)  # More red
+            result[:, :, 1] = np.clip(result[:, :, 1] + warm_boost * 20, 0, 255)  # More yellow
+            # Reduce cool tones
+            result[:, :, 2] = np.clip(result[:, :, 2] - warm_boost * 12, 0, 255)  # Less blue
         result = result.astype(np.uint8)
 
     # Calculate adjustments made

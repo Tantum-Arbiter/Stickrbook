@@ -440,11 +440,21 @@ def add_shadow(
         print(f"Warning: Shadow region mismatch - shadow {shadow_region.shape}, bg {bg_region.shape}")
         return result
 
-    # Darken background where shadow is
+    # Enhanced shadow with better contact darkening
+    # Use multiply blend mode for more natural shadows
     shadow_alpha = (shadow_region.astype(float) / 255.0 * opacity)[:, :, np.newaxis]
-    result[bg_y1:bg_y2, bg_x1:bg_x2] = (
-        bg_region * (1 - shadow_alpha * 0.5)
-    ).astype(np.uint8)
+
+    # Stronger darkening for better grounding (was 0.5, now 0.7)
+    darkening_factor = 1 - shadow_alpha * 0.7
+
+    # Apply shadow with slight color tint (shadows are slightly blue/cool)
+    shadowed = bg_region.astype(float) * darkening_factor
+
+    # Add subtle blue tint to shadows for realism (outdoor shadows are cooler)
+    shadow_tint = shadow_alpha * 5  # Subtle blue shift
+    shadowed[:, :, 2] = np.clip(shadowed[:, :, 2] + shadow_tint[:, :, 0], 0, 255)
+
+    result[bg_y1:bg_y2, bg_x1:bg_x2] = shadowed.astype(np.uint8)
 
     return result
 

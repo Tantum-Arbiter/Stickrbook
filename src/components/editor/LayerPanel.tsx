@@ -198,7 +198,7 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
         // Convert layer image to base64
         const assetBase64 = await imageToBase64(asset.imagePath);
 
-        // Call Magic Merge API
+        // Call Magic Merge API with enhanced parameters for photorealistic compositing
         const response = await fetch(`${API_BASE_URL}/magic-merge/magic-merge`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -208,11 +208,17 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
             position: { x: Math.round(layer.x), y: Math.round(layer.y) },
             scale: finalScale,
             harmonize: true,
+            harmonizeStrength: 0.85, // Strong color matching for natural integration
+            advancedHarmonization: true, // Use multi-zone color grading + environmental lighting
+            edgeBlending: true, // Enable environmental color spill
+            edgeBlendingStrength: 0.7, // Strong bounce light from surroundings
+            seamBlending: false, // Disable Poisson to avoid ghosting
+            blendMode: 'normal', // Best for preserving character details
             shadow: {
               x: 10,
               y: 10,
-              blur: 20,
-              opacity: 0.5,
+              blur: 25, // Softer shadow for outdoor scenes
+              opacity: 0.6, // Stronger contact shadow
             },
           }),
         });

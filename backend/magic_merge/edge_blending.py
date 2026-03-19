@@ -16,22 +16,25 @@ def apply_edge_color_bleeding(
     mask: np.ndarray,
     position: Dict[str, int],
     strength: float = 0.3,
-    bleed_distance: int = 5
+    bleed_distance: int = 8
 ) -> np.ndarray:
     """
     Apply edge color bleeding from background to asset edges
-    
+
     This creates a natural transition where the asset edges pick up
     colors from the surrounding background, making the composite
     look more integrated and realistic.
-    
+
+    Enhanced to simulate environmental bounce light (e.g., green spill
+    from grass, yellow from sunlight, blue from sky).
+
     Args:
         asset: Asset image array (RGB)
         background: Background image array (RGB)
         mask: Alpha mask array (grayscale, 0-255)
         position: {'x': int, 'y': int} position on background
         strength: Bleeding strength (0-1, default 0.3)
-        bleed_distance: Distance in pixels to bleed (default 5)
+        bleed_distance: Distance in pixels to bleed (default 8, increased for stronger effect)
         
     Returns:
         Asset with edge color bleeding applied
@@ -83,24 +86,33 @@ def apply_edge_color_bleeding(
     
     # Get background colors at asset position
     bg_region = background[dst_y1:dst_y2, dst_x1:dst_x2].astype(float)
-    
-    # Apply Gaussian blur to background for smoother color bleeding
-    bg_blurred = cv2.GaussianBlur(bg_region, (bleed_distance * 2 + 1, bleed_distance * 2 + 1), 0)
-    
+
+    # Apply stronger Gaussian blur for more pronounced environmental color spill
+    blur_kernel = max(bleed_distance * 2 + 1, 11)  # Minimum 11x11 kernel
+    bg_blurred = cv2.GaussianBlur(bg_region, (blur_kernel, blur_kernel), 0)
+
+    # ENHANCEMENT: Boost saturation of background colors for stronger bounce light effect
+    # This simulates how environmental light (grass, sky) reflects onto subjects
+    bg_hsv = cv2.cvtColor(bg_blurred.astype(np.uint8), cv2.COLOR_RGB2HSV).astype(float)
+    bg_hsv[:, :, 1] = np.clip(bg_hsv[:, :, 1] * 1.3, 0, 255)  # 30% more saturated
+    bg_blurred = cv2.cvtColor(bg_hsv.astype(np.uint8), cv2.COLOR_HSV2RGB).astype(float)
+
     # Blend asset with blurred background at edges
     asset_region = result[src_y1:src_y2, src_x1:src_x2]
     edge_weight_region = edge_weight[src_y1:src_y2, src_x1:src_x2]
-    
+
     # Expand edge weight to 3 channels
     if len(edge_weight_region.shape) == 2:
         edge_weight_region = edge_weight_region[:, :, np.newaxis]
-    
-    # Blend: asset * (1 - edge_weight) + background * edge_weight
+
+    # Enhanced blending with stronger color spill
+    # Use additive blending for bounce light effect (not just replacement)
     blended_region = (
-        asset_region * (1 - edge_weight_region) +
-        bg_blurred * edge_weight_region
+        asset_region * (1 - edge_weight_region * 0.7) +  # Preserve more asset detail
+        bg_blurred * edge_weight_region * 1.2  # Stronger environmental color
     )
-    
+    blended_region = np.clip(blended_region, 0, 255)
+
     result[src_y1:src_y2, src_x1:src_x2] = blended_region
     
     return np.clip(result, 0, 255).astype(np.uint8)
