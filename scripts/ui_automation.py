@@ -60,28 +60,34 @@ class StickrbookUIAutomation:
         """Create a new project"""
         logger.info(f"📁 Creating project: {name}")
 
-        # Look for "New Project" or "+" button in the UI
-        # The UI might use a modal or inline form
-        try:
-            await self.page.click('button:has-text("New Project")', timeout=3000)
-        except:
-            # Try alternative selectors
-            await self.page.click('.project-add-btn, button.add-project', timeout=3000)
+        # Debug: Take screenshot before clicking
+        await self.page.screenshot(path="debug_before_click.png")
+        logger.info("Screenshot saved: debug_before_click.png")
 
-        # Wait for modal or form to appear
-        await self.page.wait_for_selector('input, textarea', timeout=3000)
+        # Debug: Print all buttons on the page
+        buttons = await self.page.query_selector_all('button')
+        logger.info(f"Found {len(buttons)} buttons on page")
+        for i, btn in enumerate(buttons[:10]):  # First 10 buttons
+            text = await btn.inner_text()
+            logger.info(f"  Button {i}: '{text}'")
 
-        # Fill in project name (try different possible selectors)
-        await self.page.fill('input[type="text"]:visible, input[placeholder*="name" i]:visible', name)
+        # Set up dialog handler BEFORE clicking (SidebarContent.tsx line 76)
+        async def handle_dialog(dialog):
+            logger.info(f"Dialog appeared with message: {dialog.message}")
+            await dialog.accept(name)
 
-        if description:
-            await self.page.fill('textarea:visible', description)
+        self.page.on("dialog", handle_dialog)
 
-        # Click Create/Submit button
-        await self.page.click('button:has-text("Create"), button:has-text("Add"), button[type="submit"]')
+        # Click the "+ New" button in the Projects section (SidebarContent.tsx line 148)
+        logger.info("Attempting to click '+ New' button...")
+        await self.page.click('button:has-text("+ New")', timeout=10000)
 
         # Wait for project to appear in the list
-        await self.page.wait_for_selector(f'.project-item:has-text("{name}"), .project-header:has-text("{name}")', timeout=5000)
+        await self.page.wait_for_selector(f'.project-item:has-text("{name}"), .project-header:has-text("{name}")', timeout=10000)
+
+        # Remove dialog handler
+        self.page.remove_listener("dialog", handle_dialog)
+
         logger.info(f"✓ Project created: {name}")
 
         return name
@@ -90,17 +96,23 @@ class StickrbookUIAutomation:
         """Create a new book in the current project using the prompt dialog"""
         logger.info(f"📖 Creating book: {title}")
 
+        # Set up dialog handler BEFORE clicking (ProjectTree.tsx line 96)
+        async def handle_dialog(dialog):
+            await dialog.accept(title)
+
+        self.page.on("dialog", handle_dialog)
+
         # Click "New Book" button (based on ProjectTree.tsx line 163)
         await self.page.click('button.book-add-btn:has-text("New Book")')
 
-        # Handle the browser prompt dialog
-        self.page.on("dialog", lambda dialog: dialog.accept(title))
-
         # Wait for the book to appear in the project tree
-        await self.page.wait_for_selector(f'.book-item:has-text("{title}")', timeout=5000)
+        await self.page.wait_for_selector(f'.book-item:has-text("{title}")', timeout=10000)
 
         # Click on the book to select it
         await self.page.click(f'.book-item:has-text("{title}")')
+
+        # Remove dialog handler
+        self.page.remove_listener("dialog", handle_dialog)
 
         logger.info(f"✓ Book created and selected: {title}")
 
@@ -138,12 +150,11 @@ class StickrbookUIAutomation:
         except:
             logger.info("No variation count input found, using default")
 
-        # Handle the batch name prompt dialog
-        if batch_name:
-            self.page.on("dialog", lambda dialog: dialog.accept(batch_name))
-        else:
-            # Accept with default name
-            self.page.on("dialog", lambda dialog: dialog.accept(""))
+        # Set up dialog handler BEFORE clicking Generate (PromptInput.tsx line 333)
+        async def handle_dialog(dialog):
+            await dialog.accept(batch_name if batch_name else "")
+
+        self.page.on("dialog", handle_dialog)
 
         # Click Generate button (based on PromptInput.tsx line 948-963)
         await self.page.click('button.auto-gen-btn:has-text("Generate"), button:has-text("Generate Variations")')
@@ -154,6 +165,10 @@ class StickrbookUIAutomation:
 
         # Wait for generation to complete (variations appear in grid)
         await self.page.wait_for_selector('.variation-card, .variation-item, img[src*="job"]', timeout=TIMEOUT)
+
+        # Remove dialog handler
+        self.page.remove_listener("dialog", handle_dialog)
+
         logger.info(f"✓ Generation complete!")
 
     async def save_variation(self, index: int = 0, name: str = None):
