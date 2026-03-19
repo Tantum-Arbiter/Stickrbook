@@ -136,35 +136,41 @@ class StickrbookUIAutomation:
         }
 
         # Click the mode button
+        logger.info(f"Selecting {mode_map[asset_type]} mode...")
         await self.page.click(f'.mode-btn:has-text("{mode_map[asset_type]}"), button:has-text("{mode_map[asset_type]}")')
 
         # Wait a moment for mode to switch
-        await self.page.wait_for_timeout(500)
+        await self.page.wait_for_timeout(1000)
 
         # Enter prompt in the textarea
+        logger.info(f"Entering prompt: {prompt}")
         await self.page.fill('textarea.prompt-input, textarea[placeholder*="describe" i]', prompt)
 
         # Set variation count if there's a number input
         try:
             await self.page.fill('input[type="number"]', str(count), timeout=2000)
+            logger.info(f"Set variation count to {count}")
         except:
             logger.info("No variation count input found, using default")
 
         # Set up dialog handler BEFORE clicking Generate (PromptInput.tsx line 333)
         async def handle_dialog(dialog):
+            logger.info(f"Batch name dialog appeared: {dialog.message}")
             await dialog.accept(batch_name if batch_name else "")
 
         self.page.on("dialog", handle_dialog)
 
         # Click Generate button (based on PromptInput.tsx line 948-963)
+        logger.info("Clicking Generate button...")
         await self.page.click('button.auto-gen-btn:has-text("Generate"), button:has-text("Generate Variations")')
 
-        # Wait for generation to start (button changes to "Submitting...")
-        await self.page.wait_for_selector('button:has-text("Submitting"), button.loading', timeout=5000)
-        logger.info(f"⏳ Generation submitted, waiting for results...")
+        # Wait a moment for the request to be sent
+        await self.page.wait_for_timeout(2000)
+        logger.info(f"⏳ Generation submitted, waiting for results (up to {TIMEOUT/1000} seconds)...")
 
         # Wait for generation to complete (variations appear in grid)
-        await self.page.wait_for_selector('.variation-card, .variation-item, img[src*="job"]', timeout=TIMEOUT)
+        # Don't wait for "Submitting" state as it might be too fast
+        await self.page.wait_for_selector('.variation-card, .variation-item, img[src*="job"], img[src*="output"]', timeout=TIMEOUT)
 
         # Remove dialog handler
         self.page.remove_listener("dialog", handle_dialog)
@@ -266,8 +272,17 @@ async def main():
         except Exception as e:
             logger.error(f"❌ Automation failed: {e}")
             # Take a screenshot for debugging
-            await automation.page.screenshot(path="automation_error.png")
-            logger.info("Screenshot saved to automation_error.png")
+            try:
+                await automation.page.screenshot(path="automation_error.png", full_page=True)
+                logger.info("Screenshot saved to automation_error.png")
+
+                # Also save the HTML for debugging
+                html = await automation.page.content()
+                with open("automation_error.html", "w", encoding="utf-8") as f:
+                    f.write(html)
+                logger.info("HTML saved to automation_error.html")
+            except:
+                pass
             raise
 
 
