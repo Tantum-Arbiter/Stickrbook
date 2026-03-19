@@ -594,9 +594,29 @@ async def generate_variations(
     mode = request.generation_mode
     logger.info(f"Generation mode: {mode.value}")
 
+    # Detect if user's prompt already contains style information
+    # If it does, use it directly instead of book.art_style
+    prompt_lower = request.prompt.lower()
+    has_style_keywords = any(keyword in prompt_lower for keyword in [
+        'illustration', 'watercolor', 'painting', 'cartoon', 'anime', 'style',
+        'digital art', 'oil painting', 'sketch', 'drawing', 'render', '3d', '2d'
+    ])
+
+    # Use user's prompt as style if it contains style keywords, otherwise use book's art_style
+    style_to_use = request.prompt if has_style_keywords else book.art_style
+
     if mode == GenerationMode.SCENE:
         # SCENE: Empty environment only - NO characters
-        full_prompt = f"""STYLE: {book.art_style}
+        if has_style_keywords:
+            # User provided full prompt with style - use it directly as SETTING
+            full_prompt = f"""SETTING: {request.prompt}
+ATMOSPHERE: warm and inviting scene
+COMPOSITION: open space for character placement, empty environment
+{book.reference_prompt}
+empty scene, no characters, no people, no animals, environment only, background illustration"""
+        else:
+            # User provided just setting description - add book's art style
+            full_prompt = f"""STYLE: {book.art_style}
 SETTING: {request.prompt}
 ATMOSPHERE: warm and inviting scene
 COMPOSITION: open space for character placement, empty environment
@@ -611,7 +631,17 @@ empty scene, no characters, no people, no animals, environment only, background 
         # Add pose and view angle to prompt if provided
         pose_desc = f"{request.pose_name} pose, " if request.pose_name else ""
         view_desc = f"{request.view_angle} view, " if request.view_angle else ""
-        full_prompt = f"""STYLE: {book.art_style}
+
+        if has_style_keywords:
+            # User provided full prompt with style
+            full_prompt = f"""{request.prompt}
+{char_desc}
+{pose_desc}{view_desc}
+{book.reference_prompt}
+character design, isolated character, simple gradient background, transparent background style, clean edges, full body, centered, single character, white background, no environment, no scene"""
+        else:
+            # User provided just character description - add book's art style
+            full_prompt = f"""STYLE: {book.art_style}
 {request.prompt}
 {char_desc}
 {pose_desc}{view_desc}
@@ -623,7 +653,16 @@ character design, isolated character, simple gradient background, transparent ba
         # OBJECT/PROP: Isolated object on simple/transparent background
         # Add view angle to prompt if provided
         view_desc = f"{request.view_angle} view, " if request.view_angle else ""
-        full_prompt = f"""STYLE: {book.art_style}
+
+        if has_style_keywords:
+            # User provided full prompt with style
+            full_prompt = f"""{request.prompt}
+{view_desc}
+{book.reference_prompt}
+single object, isolated prop, transparent background, game asset style, clean edges, centered, white background, no environment, no characters, no people, product shot, clean silhouette"""
+        else:
+            # User provided just object description - add book's art style
+            full_prompt = f"""STYLE: {book.art_style}
 {request.prompt}
 {view_desc}
 {book.reference_prompt}
@@ -632,7 +671,11 @@ single object, isolated prop, transparent background, game asset style, clean ed
 
     else:
         # SKETCH or fallback
-        full_prompt = f"""STYLE: {book.art_style}
+        if has_style_keywords:
+            full_prompt = f"""{request.prompt}
+{book.reference_prompt}"""
+        else:
+            full_prompt = f"""STYLE: {book.art_style}
 {request.prompt}
 {book.reference_prompt}"""
         negative = request.negative_prompt or book.negative_prompt

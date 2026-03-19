@@ -89,26 +89,43 @@ await automation.generate_asset(
 )
 ```
 
-### ⚠️ Important: Prompts and Presets
+### ⚠️ Important: Prompts and Art Styles
 
-The UI has **preset dropdowns** (Scene Preset, Character Preset, Object Preset) that auto-fill prompts with predefined templates. The automation script **automatically clears these presets** to ensure your custom prompts are used exactly as written.
+**How Prompts Work:**
+
+The backend automatically detects if your prompt contains style keywords (like "illustration", "watercolor", "painting", "cartoon", etc.).
+
+- **If your prompt includes style keywords**: Your prompt is used directly, overriding the book's default art style
+- **If your prompt is just a description**: The book's default art style is prepended to your prompt
 
 **Best Practices for Prompts:**
 
-1. **Include art style in your prompt** for better control:
+1. **Include art style in your prompt** for full control:
    ```python
-   prompt="watercolor painting of a magical forest clearing with sunlight"
-   # Instead of just: "magical forest clearing"
+   # ✅ GOOD - Full control over style
+   prompt="children's book illustration, watercolor painting, soft pastel colors, a magical forest clearing with sunlight filtering through tall trees"
    ```
 
-2. **Be specific about the style you want**:
+2. **Or use short descriptions** to inherit the book's style:
    ```python
-   prompt="children's book illustration, soft pastel colors, a friendly fox character"
+   # ✅ ALSO GOOD - Uses book's default style
+   prompt="a magical forest clearing with sunlight"
+   # Backend will prepend: "STYLE: {book.art_style}"
    ```
 
-3. **The script does NOT select themes**, so you have full control over the generation style
+3. **Avoid mixing approaches**:
+   ```python
+   # ❌ BAD - Might conflict with book's style
+   prompt="forest clearing"  # Too vague, might get unexpected results
+   ```
 
-4. **Avoid relying on UI presets** - write complete, self-contained prompts
+4. **The automation script clears UI presets** to prevent them from overriding your custom prompts
+
+**Copyright Safety:**
+
+- Avoid specific artist names, copyrighted character names, or trademarked styles
+- Use generic style descriptions: "watercolor illustration" instead of "Disney style"
+- The prompts are designed to be generic and non-infringing
 
 # Generate an object
 await automation.generate_asset(
