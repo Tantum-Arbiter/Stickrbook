@@ -17,8 +17,8 @@ COPY requirements-ai.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install AI dependencies (optional - comment out if you don't need Magic Merge)
-# RUN pip install --no-cache-dir -r requirements-ai.txt
+# Install AI dependencies (required for Magic Merge)
+RUN pip install --no-cache-dir -r requirements-ai.txt
 
 # Copy application code
 COPY . .
@@ -31,7 +31,7 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/v1/health || exit 1
 
 # Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
