@@ -128,16 +128,16 @@ class StickrbookUIAutomation:
         """Generate an asset (scene, character, or object)"""
         logger.info(f"🎨 Generating {asset_type}: {prompt}")
 
-        # Select generation mode (based on PromptInput.tsx mode buttons)
+        # Select generation mode (based on PromptInput.tsx line 497-506)
         mode_map = {
             "scene": "Scene",
             "character": "Character",
             "object": "Object"
         }
 
-        # Click the mode button
+        # Click the mode button using the correct class name
         logger.info(f"Selecting {mode_map[asset_type]} mode...")
-        await self.page.click(f'.mode-btn:has-text("{mode_map[asset_type]}"), button:has-text("{mode_map[asset_type]}")')
+        await self.page.click(f'button.generation-mode:has-text("{mode_map[asset_type]}")', force=True)
 
         # Wait a moment for mode to switch
         await self.page.wait_for_timeout(1000)
@@ -177,37 +177,42 @@ class StickrbookUIAutomation:
 
         logger.info(f"✓ Generation complete!")
 
-    async def save_variation(self, index: int = 0, name: str = None):
+    async def save_variation(self, index: int = 0, collection_name: str = None):
         """Save a generated variation to the asset library"""
-        logger.info(f"💾 Saving variation {index}")
+        logger.info(f"💾 Saving variation {index} to collection: {collection_name or 'default'}")
 
-        # Find all variation cards
-        variations = await self.page.query_selector_all('.variation-card, .variation-item')
+        # Find all "💾 Save" buttons in variation cards (VariationsGrid.tsx line 720-722)
+        save_buttons = await self.page.query_selector_all('button:has-text("💾 Save")')
 
-        if index >= len(variations):
-            logger.error(f"Variation index {index} out of range (found {len(variations)} variations)")
+        if not save_buttons:
+            logger.error("No save buttons found - are there any generated variations?")
             return
 
-        # Click on the variation to select it
-        await variations[index].click()
+        if index >= len(save_buttons):
+            logger.error(f"Variation index {index} out of range (found {len(save_buttons)} variations)")
+            return
 
-        # Wait for variation to be selected
-        await self.page.wait_for_timeout(500)
+        # Click the Save button for this variation
+        logger.info(f"Clicking save button for variation {index}...")
+        await save_buttons[index].click()
 
-        # Click Save button (based on GeneratePanel.tsx)
-        await self.page.click('button:has-text("Save"), .save-btn')
+        # Wait for the save dialog to appear (VariationsGrid.tsx line 500-581)
+        await self.page.wait_for_selector('#save-collection-input', timeout=5000)
+        logger.info("Save dialog appeared")
 
-        # If there's a name input dialog, fill it
-        if name:
-            try:
-                await self.page.fill('input[placeholder*="name" i]', name, timeout=2000)
-                await self.page.click('button:has-text("Confirm"), button:has-text("Save")')
-            except:
-                logger.info("No name input found, using default name")
+        # Fill in the collection name if provided
+        if collection_name:
+            await self.page.fill('#save-collection-input', collection_name)
+            logger.info(f"Entered collection name: {collection_name}")
+        else:
+            logger.info("Using default collection name")
 
-        # Wait for save to complete
-        await self.page.wait_for_timeout(1000)
-        logger.info(f"✓ Variation saved")
+        # Click the "Save" button in the dialog (VariationsGrid.tsx line 568-576)
+        await self.page.click('button:has-text("Save"):not(:has-text("Cancel"))')
+
+        # Wait for the dialog to close and save to complete
+        await self.page.wait_for_timeout(2000)
+        logger.info(f"✓ Variation {index} saved successfully")
 
 
 async def main():
@@ -216,6 +221,7 @@ async def main():
     parser.add_argument("--fast", action="store_true", help="Run at full speed (no slow-mo)")
     parser.add_argument("--project", default="Test Storybook", help="Project name")
     parser.add_argument("--book", default="My First Story", help="Book title")
+    parser.add_argument("--keep-open", action="store_true", help="Keep browser open after completion")
     args = parser.parse_args()
 
     slow_mo = 0 if args.fast else 500
@@ -243,7 +249,7 @@ async def main():
             )
 
             # Save the first variation
-            await automation.save_variation(index=0, name="Forest Clearing")
+            await automation.save_variation(index=0, collection_name="Forest Scenes")
 
             # Generate a character
             await automation.generate_asset(
@@ -254,7 +260,7 @@ async def main():
             )
 
             # Save the first character variation
-            await automation.save_variation(index=0, name="Friendly Fox")
+            await automation.save_variation(index=0, collection_name="Main Characters")
 
             # Generate an object
             await automation.generate_asset(
@@ -265,9 +271,19 @@ async def main():
             )
 
             # Save the first object variation
-            await automation.save_variation(index=0, name="Magic Acorn")
+            await automation.save_variation(index=0, collection_name="Magic Items")
 
             logger.info("🎉 Automation complete! Check the UI to see your generated assets.")
+
+            # Keep browser open if requested
+            if args.keep_open:
+                logger.info("⏸️  Browser will stay open. Press Ctrl+C to close.")
+                try:
+                    # Keep the script running until user interrupts
+                    while True:
+                        await automation.page.wait_for_timeout(1000)
+                except KeyboardInterrupt:
+                    logger.info("👋 Closing browser...")
 
         except Exception as e:
             logger.error(f"❌ Automation failed: {e}")
@@ -283,6 +299,16 @@ async def main():
                 logger.info("HTML saved to automation_error.html")
             except:
                 pass
+
+            # Keep browser open on error if requested
+            if args.keep_open:
+                logger.info("⏸️  Browser will stay open for debugging. Press Ctrl+C to close.")
+                try:
+                    while True:
+                        await automation.page.wait_for_timeout(1000)
+                except KeyboardInterrupt:
+                    logger.info("👋 Closing browser...")
+
             raise
 
 
