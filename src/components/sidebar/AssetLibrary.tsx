@@ -86,8 +86,9 @@ export function AssetLibrary({
   // Filter assets by type, search, tags, and collection
   const filteredAssets = useMemo(() => {
     return assets.filter((asset) => {
-      // Type filter
-      if (activeTab !== 'all' && asset.assetType !== activeTab) {
+      // Type filter - normalize "prop" to "object" for filtering
+      const normalizedAssetType = asset.assetType === 'prop' ? 'object' : asset.assetType;
+      if (activeTab !== 'all' && normalizedAssetType !== activeTab) {
         return false;
       }
       // Collection filter
@@ -124,8 +125,10 @@ export function AssetLibrary({
   const allCollections = useMemo(() => {
     const collections = new Set<string>();
     assets.forEach((asset) => {
+      // Normalize "prop" to "object" for filtering
+      const normalizedAssetType = asset.assetType === 'prop' ? 'object' : asset.assetType;
       // Only include collections from the active tab
-      if (activeTab === 'all' || asset.assetType === activeTab) {
+      if (activeTab === 'all' || normalizedAssetType === activeTab) {
         if (asset.collection) {
           collections.add(asset.collection);
         }
@@ -150,6 +153,9 @@ export function AssetLibrary({
       background: [],
       object: [],
       reference: [],
+      prop: [], // Backend uses "prop" for objects
+      variation: [], // Backend uses "variation" for generated variations
+      final: [], // Backend uses "final" for final images
     };
 
     // Group collections by their primary asset type
@@ -159,10 +165,19 @@ export function AssetLibrary({
         // Use the most common asset type in this collection
         const typeCounts: Record<string, number> = {};
         assetsInCollection.forEach(a => {
-          typeCounts[a.assetType] = (typeCounts[a.assetType] || 0) + 1;
+          // Normalize asset type: map "prop" to "object" for display purposes
+          const normalizedType = a.assetType === 'prop' ? 'object' : a.assetType;
+          typeCounts[normalizedType] = (typeCounts[normalizedType] || 0) + 1;
         });
         const primaryType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0][0] as AssetType;
-        byType[primaryType].push(collection);
+
+        // Make sure the primary type exists in byType before pushing
+        if (byType[primaryType]) {
+          byType[primaryType].push(collection);
+        } else {
+          // Fallback to 'object' if type is unknown
+          byType['object'].push(collection);
+        }
       }
     });
 
