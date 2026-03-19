@@ -321,11 +321,11 @@ async def generate_story_images(
 
     async with StickrbookAPI() as api:
         # Create a book for this generation session
-        book = await api.create_book(
+        book_response = await api.create_book(
             title=f"{theme_data['name']} - {timestamp}",
             description=f"Auto-generated story images for {theme_data['name']}",
         )
-        book_id = book["id"]
+        book_id = book_response["book"]["id"]
         console.print(f"[green]✓[/green] Created book: {book_id}")
 
         # Generate images for each style
