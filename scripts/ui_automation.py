@@ -215,22 +215,45 @@ class StickrbookUIAutomation:
         await save_buttons[index].click()
 
         # Wait for the save dialog to appear (VariationsGrid.tsx line 500-581)
-        await self.page.wait_for_selector('#save-collection-input', timeout=5000)
-        logger.info("Save dialog appeared")
+        try:
+            await self.page.wait_for_selector('#save-collection-input', timeout=5000, state='visible')
+            logger.info("Save dialog appeared")
+        except Exception as e:
+            logger.error(f"Save dialog did not appear: {e}")
+            # Take a screenshot for debugging
+            await self.page.screenshot(path="save_dialog_error.png")
+            raise
 
         # Fill in the collection name if provided
         if collection_name:
             await self.page.fill('#save-collection-input', collection_name)
             logger.info(f"Entered collection name: {collection_name}")
         else:
-            logger.info("Using default collection name")
+            logger.info("Leaving collection name empty (will use default)")
 
         # Click the "Save" button in the dialog (VariationsGrid.tsx line 568-576)
-        await self.page.click('button:has-text("Save"):not(:has-text("Cancel"))')
+        # Find the Save button that's inside the dialog (not the variation card buttons)
+        dialog_save_buttons = await self.page.query_selector_all('button:has-text("Save")')
+
+        # The last "Save" button should be the one in the dialog
+        if dialog_save_buttons:
+            logger.info(f"Found {len(dialog_save_buttons)} 'Save' buttons, clicking the last one (dialog button)")
+            await dialog_save_buttons[-1].click()
+        else:
+            logger.error("Could not find Save button in dialog")
+            await self.page.screenshot(path="save_button_error.png")
+            raise Exception("Save button not found in dialog")
 
         # Wait for the dialog to close and save to complete
         await self.page.wait_for_timeout(2000)
-        logger.info(f"✓ Variation {index} saved successfully")
+
+        # Verify the dialog closed
+        dialog_still_visible = await self.page.is_visible('#save-collection-input')
+        if dialog_still_visible:
+            logger.warning("Save dialog is still visible - save may have failed")
+            await self.page.screenshot(path="save_still_open.png")
+        else:
+            logger.info(f"✓ Variation {index} saved successfully")
 
 
 async def main():
