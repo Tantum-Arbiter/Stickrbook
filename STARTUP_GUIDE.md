@@ -1,6 +1,30 @@
 # 🚀 Stickrbook Startup Guide (Windows)
 
-## Quick Start - One Command!
+## 🐳 **RECOMMENDED: Docker Setup (Easiest!)**
+
+### Prerequisites
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Start Docker Desktop and wait for it to be running
+
+### Quick Start with Docker
+
+**Double-click** `docker-start.bat` in your project root folder.
+
+This will:
+1. ✅ Check Docker is running
+2. ✅ Build containers (first time only)
+3. ✅ Start Backend + Frontend in Docker
+4. ✅ Open browser to http://localhost:5173
+
+**Note:** You still need to start ComfyUI separately (see below)
+
+**See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete Docker documentation.**
+
+---
+
+## 🔧 Alternative: Manual Setup (Without Docker)
+
+### Quick Start - One Command!
 
 **Double-click** `start_all.bat` in your project root folder.
 
