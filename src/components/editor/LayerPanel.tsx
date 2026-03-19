@@ -198,8 +198,8 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
         // Convert layer image to base64
         const assetBase64 = await imageToBase64(asset.imagePath);
 
-        // Call Magic Merge API with enhanced parameters for photorealistic compositing
-        const response = await fetch(`${API_BASE_URL}/magic-merge/magic-merge`, {
+        // Call AI Composite API for artistic blending with ComfyUI img2img
+        const response = await fetch(`${API_BASE_URL}/magic-merge/ai-composite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -207,39 +207,33 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
             background: backgroundBase64,
             position: { x: Math.round(layer.x), y: Math.round(layer.y) },
             scale: finalScale,
-            harmonize: true,
-            harmonizeStrength: 0.85, // Strong color matching for natural integration
-            advancedHarmonization: true, // Use multi-zone color grading + environmental lighting
-            edgeBlending: true, // Enable environmental color spill
-            edgeBlendingStrength: 0.7, // Strong bounce light from surroundings
-            seamBlending: false, // Disable Poisson to avoid ghosting
-            blendMode: 'normal', // Best for preserving character details
-            shadow: {
-              x: 10,
-              y: 10,
-              blur: 25, // Softer shadow for outdoor scenes
-              opacity: 0.6, // Stronger contact shadow
-            },
+            style: currentBook?.artStyle || "children's storybook illustration",
+            character: asset.name || "character",
+            action: "naturally integrated in the scene",
+            setting: "matching the background environment",
+            denoise: 0.6, // AI blending strength (0.5-0.7 for good balance)
+            steps: 35,
+            cfg: 5.5,
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`Magic Merge failed: ${response.statusText}`);
+          throw new Error(`AI Composite failed: ${response.statusText}`);
         }
 
         const result = await response.json();
 
-        // Update the base image with the merged result
+        // Update the base image with the AI-blended result
         setBaseImage(result.result);
 
         // Remove the merged layer
         deleteLayer(layer.id);
       }
 
-      alert('Magic Merge complete! Layers blended into background.');
+      alert('AI Composite complete! Layers artistically blended into background.');
     } catch (error) {
-      console.error('Magic Merge failed:', error);
-      alert(`Magic Merge failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('AI Composite failed:', error);
+      alert(`AI Composite failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsMerging(false);
     }
@@ -430,9 +424,9 @@ export function LayerPanel({ className = '' }: LayerPanelProps) {
                 className="layer-action-btn"
                 onClick={handleMagicMerge}
                 disabled={isMerging || selectedLayerIds.length === 0}
-                title={selectedLayerIds.length === 0 ? "Select layers to merge" : "Magic Merge - Blend selected layers into background with AI"}
+                title={selectedLayerIds.length === 0 ? "Select layers to merge" : "AI Composite - Artistically blend selected layers into background using Stable Diffusion (30-60s)"}
               >
-                <Sparkles size={12} /> {isMerging ? 'Merging...' : 'Merge'}
+                <Sparkles size={12} /> {isMerging ? 'AI Blending...' : 'AI Merge'}
               </button>
               <button
                 className="layer-action-btn"
