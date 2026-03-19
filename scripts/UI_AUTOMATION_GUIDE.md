@@ -87,6 +87,28 @@ await automation.generate_asset(
     prompt="A friendly fox wearing a green vest",
     count=4
 )
+```
+
+### ⚠️ Important: Prompts and Presets
+
+The UI has **preset dropdowns** (Scene Preset, Character Preset, Object Preset) that auto-fill prompts with predefined templates. The automation script **automatically clears these presets** to ensure your custom prompts are used exactly as written.
+
+**Best Practices for Prompts:**
+
+1. **Include art style in your prompt** for better control:
+   ```python
+   prompt="watercolor painting of a magical forest clearing with sunlight"
+   # Instead of just: "magical forest clearing"
+   ```
+
+2. **Be specific about the style you want**:
+   ```python
+   prompt="children's book illustration, soft pastel colors, a friendly fox character"
+   ```
+
+3. **The script does NOT select themes**, so you have full control over the generation style
+
+4. **Avoid relying on UI presets** - write complete, self-contained prompts
 
 # Generate an object
 await automation.generate_asset(

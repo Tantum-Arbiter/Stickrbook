@@ -142,9 +142,27 @@ class StickrbookUIAutomation:
         # Wait a moment for mode to switch
         await self.page.wait_for_timeout(1000)
 
+        # Clear any preset selection that might override the prompt
+        # Scene/Character/Object presets auto-fill the prompt, so we need to clear them
+        try:
+            # Find the preset dropdown and set it to empty (PromptInput.tsx line 604-612)
+            preset_selects = await self.page.query_selector_all('select')
+            for select in preset_selects:
+                label = await self.page.evaluate('(el) => el.previousElementSibling?.textContent', select)
+                if label and ('Preset' in label or 'Theme' in label):
+                    await select.select_option('')
+                    logger.info(f"Cleared preset: {label}")
+        except Exception as e:
+            logger.info(f"No presets to clear: {e}")
+
+        # Wait a moment for any preset clearing to take effect
+        await self.page.wait_for_timeout(500)
+
         # Enter prompt in the textarea
         logger.info(f"Entering prompt: {prompt}")
-        await self.page.fill('textarea.prompt-input, textarea[placeholder*="describe" i]', prompt)
+        # Clear existing text first, then type the new prompt
+        await self.page.fill('textarea[placeholder*="Describe" i]', '')
+        await self.page.fill('textarea[placeholder*="Describe" i]', prompt)
 
         # Set variation count if there's a number input
         try:
@@ -240,10 +258,10 @@ async def main():
             # Create a book
             await automation.create_book(title=args.book)
 
-            # Generate a scene
+            # Generate a scene with art style included in prompt
             await automation.generate_asset(
                 asset_type="scene",
-                prompt="A magical forest clearing with sunlight filtering through trees",
+                prompt="children's book illustration, watercolor painting, soft pastel colors, a magical forest clearing with sunlight filtering through tall trees, dappled light, mossy ground, wildflowers",
                 batch_name="Forest Scenes",
                 count=4
             )
@@ -251,10 +269,10 @@ async def main():
             # Save the first variation
             await automation.save_variation(index=0, collection_name="Forest Scenes")
 
-            # Generate a character
+            # Generate a character with art style included
             await automation.generate_asset(
                 asset_type="character",
-                prompt="A friendly fox wearing a green vest and brown boots",
+                prompt="children's book illustration, watercolor style, a friendly fox character wearing a green vest and brown boots, cute and whimsical, isolated on transparent background",
                 batch_name="Main Characters",
                 count=4
             )
@@ -262,10 +280,10 @@ async def main():
             # Save the first character variation
             await automation.save_variation(index=0, collection_name="Main Characters")
 
-            # Generate an object
+            # Generate an object with art style included
             await automation.generate_asset(
                 asset_type="object",
-                prompt="A magical glowing acorn with sparkles",
+                prompt="children's book illustration, watercolor painting, a magical glowing acorn with golden sparkles and soft light, whimsical, isolated on transparent background",
                 batch_name="Magic Items",
                 count=4
             )
