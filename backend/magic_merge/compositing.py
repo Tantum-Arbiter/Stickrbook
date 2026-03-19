@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image
 import cv2
 from typing import Dict
-from .edge_blending import apply_edge_color_bleeding, apply_ambient_occlusion, Tuple
+from .edge_blending import apply_edge_color_bleeding, apply_ambient_occlusion
 
 
 def composite_images(
